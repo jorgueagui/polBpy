@@ -29,7 +29,7 @@ Also inlcude routines to implement the dispersion analysis over regions and crea
 - 
 
 ## Tutorials
-A series of Jupyter notebooks can be found here. They show examples of basic and advanced usage of this library.
+A series of Jupyter notebooks can be found [here.](https://github.com/jorgueagui/polBpy/tree/fbe89ea5aa79fb70be8148f458581906c2cc6af3/tutorials) They show examples of basic and advanced usage of this library.
 
 ## References
 
