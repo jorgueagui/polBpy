@@ -33,7 +33,7 @@ A series of Jupyter notebooks can be found here. They show examples of basic and
 
 ## References
 
-A list of relevant references can be found [here](https://github.com/jorgueagui/polBpy/blob/9039d4af5d25c49130bf51be7fe0ce363424edcc/refs.md)
+A list of relevant references can be found [here].(https://github.com/jorgueagui/polBpy/blob/9039d4af5d25c49130bf51be7fe0ce363424edcc/refs.md)
 
 ## Licensing
 
