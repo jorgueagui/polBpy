@@ -48,4 +48,4 @@ The use of this library is regulated by the XX lincense. Details of this license
 
 ## Other Links
 
-- SOFIA/HAWC+ Archive at IPAC ()
+- SOFIA/HAWC+ Archive at IPAC: [SOFIA/IRSA.](https://irsa.ipac.caltech.edu/applications/sofia/?__action=layout.showDropDown&)
