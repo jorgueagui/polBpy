@@ -171,17 +171,17 @@ def map_comb(m_den,m_vel,m_disp,pixsize,rho=False,m_uden=0.0,m_uvel=0.0,m_udisp=
     # Create uncertainties arrays for calculations
     try:
         # If all the uncertainties are array-like
-        m_den = unumpy.array(m_den,m_uden)
-        m_vel = unumpy.array(m_vel,m_uvel)
-        m_disp = unumpy.array(m_disp,m_udisp)
+        m_den = unumpy.uarray(m_den,m_uden)
+        m_vel = unumpy.uarray(m_vel,m_uvel)
+        m_disp = unumpy.uarray(m_disp,m_udisp)
     except:
         # If the uncertainties are single values
         m_uden = np.full(m_den.shape,m_uden,dtype=float)
         m_uvel = np.full(m_vel.shape,m_uvel,dtype=float)
         m_udisp = np.full(m_disp.shape,m_udisp,dtype=float)
-        m_den = unumpy.array(m_den,m_uden) 
-        m_vel = unumpy.array(m_vel,m_uvel)
-        m_disp = unumpy.array(m_disp,m_udisp)
+        m_den = unumpy.uarray(m_den,m_uden) 
+        m_vel = unumpy.uarray(m_vel,m_uvel)
+        m_disp = unumpy.uarray(m_disp,m_udisp)
     #
     # If rho = True, den is interpretyed as mass density
     if rho == True:
@@ -192,24 +192,25 @@ def map_comb(m_den,m_vel,m_disp,pixsize,rho=False,m_uden=0.0,m_uvel=0.0,m_udisp=
         try:
             if type(m_cdepth) == np.ndarray:
                 # If depth and its uncertainty are arrays
-                m_cdepth = unumpy.array(m_cdepth,m_ucdepth)
+                m_cdepth = unumpy.uarray(m_cdepth,m_ucdepth)
             else:
                 # If depth and its uncertainty are single values
                 m_cdepth = np.full(m_den.shape,m_cdepth,dtype=float)
                 m_ucdepth = np.full(m_den.shape,m_ucdepth,dtype=float)
-                m_cdepth = unumpy.array(m_cdepth,m_ucdepth)
+                m_cdepth = unumpy.uarray(m_cdepth,m_ucdepth)
                 #
                 m_rho = mu*mH*(m_den/m_cdepth)
         except ValueError:
             print('Value(s) of cloud depth [cm] is/are needed')
     # Transforming velocity values to [cm/s]
+    
     m_vel *= 1.0E+5
     # Calculating DCF value
     dcf_map_ = (4*np.pi*m_rho)**0.5
     dcf_map_ *= (m_vel/m_disp)
     dcf_map_ *= 1.0E+6 # B-strength in micro Gauss
     #
-    dcf_map = (dcf_map_.nominal_values,dcf_map_.std_devs)
+    dcf_map = (unumpy.nominal_values(dcf_map_), unumpy.std_devs(dcf_map_))
     
     return dcf_map
 
@@ -240,14 +241,16 @@ def dcf_map(m_den,m_vel,m_disp,pixsize,rho=False,m_uden=0.0,m_uvel=0.0,m_udisp=0
         
     return res_map
 
-def dcf_range(m_den,m_vel,m_disp,pixsize,rho=False,m_uden=0.0,m_uvel=0.0,m_udisp=0.0,m_cdepth=0.0,m_ucdepth=0.0,res_den=0.0,res_vel=0.0,res_disp=0.0):
+def dcf_range(m_den,m_vel,m_disp,pixsize=1.0,rho=False,m_uden=0.0,m_uvel=0.0,m_udisp=0.0,m_cdepth=0.0,m_ucdepth=0.0,res_den=0.0,res_vel=0.0,res_disp=0.0):
     #
     # This function calculates Bpos values according to a DCF approximation, when some of the variables are maps
     # but not all. In such case, the spatial distribution will not be correct, instead percentiles 5,50 (median), 
     # and 95 of the distribution will be provided.
     
     # Checking which variable is a single value and create arrays with it.
-    types = type([m_den,m_vel,m_disp])
+    types = [type(m_den),type(m_vel),type(m_disp)]
+    var_names = ['Column density','Velocity dispersion','Pol Angle dispersion']
+    #print(types)
     n_float = len(np.where(types == float))
     if n_float == 3:
         print('Not all variables can be single values. Use dcf_classical or a similar single-value routine.')
@@ -257,7 +260,7 @@ def dcf_range(m_den,m_vel,m_disp,pixsize,rho=False,m_uden=0.0,m_uvel=0.0,m_udisp
         #
         for i,j in enumerate(types):
             if j == float:
-                print('Variable: ',i,'is a single value. Creating an array with this value.')
+                print('Variable: ',var_names[i],'is a single value. Creating an array with this value.')
                 if i == 0:
                     m_den = np.full_like(m_vel,m_den)
                     m_uden = np.full_like(m_vel,m_uden)
@@ -319,6 +322,6 @@ def dcf_range(m_den,m_vel,m_disp,pixsize,rho=False,m_uden=0.0,m_uvel=0.0,m_udisp
         x2 = np.median(b0p_95)
         sx2 = np.std(b0p_95)
     
-        range_dcf = [(x,sx),(x1,sx1),(x2,sx2)]
+        range_dcf = [(x1,sx1),(x,sx),(x2,sx2)]
     
     return range_dcf
