@@ -166,7 +166,11 @@ def dcf_shear_flow(den,vel,disp,flow,flow_lap,rho=False,uden=0.,uvel=0.,udisp=0,
     #
     return dcf_val
 
-def map_comb(m_den,m_vel,m_disp,pixsize,rho=False,m_uden=0.0,m_uvel=0.0,m_udisp=0.0,m_cdepth=0.0,m_ucdepth=0.0):
+def map_comb(m_den,m_vel,m_disp,m_flow=0.0,m_flow_lap=0.0,eta=1.0,rho=False,dcftype='class',
+             m_uden=0.0,m_uvel=0.0,m_udisp=0.0,m_cdepth=0.0,m_ucdepth=0.0,m_uflow=0.0,m_uflow_lap=0.0):
+    #
+    # This routine calculates Bpos accordding to a DCF approximation
+    # using maps assumed to have the same resolution.
     #
     # Create uncertainties arrays for calculations
     try:
@@ -204,13 +208,66 @@ def map_comb(m_den,m_vel,m_disp,pixsize,rho=False,m_uden=0.0,m_uvel=0.0,m_udisp=
             print('Value(s) of cloud depth [cm] is/are needed')
     # Transforming velocity values to [cm/s]
     
-    m_vel *= 1.0E+5
-    # Calculating DCF value
-    dcf_map_ = (4*np.pi*m_rho)**0.5
-    dcf_map_ *= (m_vel/m_disp)
-    dcf_map_ *= 1.0E+6 # B-strength in micro Gauss
-    #
-    dcf_map = (unumpy.nominal_values(dcf_map_), unumpy.std_devs(dcf_map_))
+    if dcftype == 'class':
+        #
+        m_vel *= 1.0E+5
+        # Calculating DCF value
+        dcf_map_ = (4*np.pi*m_rho)**0.5
+        dcf_map_ *= (m_vel/m_disp)
+        dcf_map_ *= eta
+        dcf_map_ *= 1.0E+6 # B-strength in micro Gauss
+        #
+        dcf_map = (unumpy.nominal_values(dcf_map_), unumpy.std_devs(dcf_map_))
+        
+    if dcftype == 'ls-flow':
+        #
+        try:
+            # If all the uncertainties are array-like
+            m_flow = unumpy.uarray(m_flow,m_uflow)
+
+        except:
+            # If the uncertainties are single values
+            m_uflow = np.full(m_den.shape,m_uflow,dtype=float)
+            m_flow = unumpy.uarray(m_flow,m_uflow)
+        
+        # Transforming velocity values to [cm/s]
+        m_vel *= 1.0E+5
+        m_flow *= 1.0E+5
+        # Calculating DCF value
+        dcf_map_ = (4*np.pi*m_rho)**0.5
+        dcf_map_ *= (m_vel/m_disp)
+        dcf_map_ *= eta # 
+        dcf_map_ *= ((1.-m_disp*(m_flow/m_vel))**2)**0.5
+        dcf_map_ *= 1.0E+6 # B-strength in micro Gauss
+        #
+        dcf_map = (unumpy.nominal_values(dcf_map_), unumpy.std_devs(dcf_map_))
+        
+    if dcftype == 'shear-flow':
+        #
+        try:
+            # If all the uncertainties are array-like
+            m_flow = unumpy.uarray(m_flow,m_uflow)
+            m_flow_lap = unumpy.uarray(m_flow_lap,m_uflow_lap)
+
+        except:
+            # If the uncertainties are single values
+            m_uflow = np.full(m_den.shape,m_uflow,dtype=float)
+            m_uflow_lap = np.full(m_den.shape,m_uflow_lap,dtype=float)
+            m_flow = unumpy.uarray(m_flow,m_uflow)
+            m_flow_lap = unumpy.uarray(m_flow_lap,m_uflow_lap)
+        
+        # Transforming velocity values to [cm/s]
+        m_vel *= 1.0E+5
+        m_flow *= 1.0E+5
+        m_flow_lap *= 1.0E+5
+        m_disp_f = (1.-(m_flow/m_vel)*m_disp)/( (1. - (m_flow/m_vel)*m_disp)*(m_disp**2) + (m_disp/m_vel)*m_flow_lap )
+    
+        # Calculating DCF value
+        dcf_map_ = (4*np.pi*m_rho)**0.5
+        dcf_map_ *= m_vel*(np.abs(m_disp_f))**0.5
+        dcf_map_ *= 1.0E+6 # B-strength in micro Gauss
+        #
+        dcf_map = (unumpy.nominal_values(dcf_map_), unumpy.std_devs(dcf_map_))
     
     return dcf_map
 
@@ -241,22 +298,23 @@ def dcf_map(m_den,m_vel,m_disp,pixsize,rho=False,m_uden=0.0,m_uvel=0.0,m_udisp=0
         
     return res_map
 
-def dcf_range(m_den,m_vel,m_disp,pixsize=1.0,rho=False,m_uden=0.0,m_uvel=0.0,m_udisp=0.0,m_cdepth=0.0,m_ucdepth=0.0,res_den=0.0,res_vel=0.0,res_disp=0.0):
+def dcf_range(m_den,m_vel,m_disp,m_flow=False,m_flow_lap=False,eta=1.0,rho=False,dcftype='class',
+             m_uden=0.0,m_uvel=0.0,m_udisp=0.0,m_cdepth=0.0,m_ucdepth=0.0,m_uflow=0.0,m_uflow_lap=0.0):
     #
     # This function calculates Bpos values according to a DCF approximation, when some of the variables are maps
     # but not all. In such case, the spatial distribution will not be correct, instead percentiles 5,50 (median), 
     # and 95 of the distribution will be provided.
     
     # Checking which variable is a single value and create arrays with it.
-    types = [type(m_den),type(m_vel),type(m_disp)]
-    var_names = ['Column density','Velocity dispersion','Pol Angle dispersion']
+    types = [type(m_den),type(m_vel),type(m_disp),type(m_flow),type(m_flow_lap)]
+    var_names = ['Column density','Velocity dispersion','Pol Angle dispersion','Large Scale Flow','Large Scale Flow Laplacian']
     #print(types)
     n_float = len(np.where(types == float))
-    if n_float == 3:
+    if n_float == len(types):
         print('Not all variables can be single values. Use dcf_classical or a similar single-value routine.')
         quit()
         
-    if n_float == 2 or n_float == 1:
+    if n_float == 4 or n_float == 3 or n_float == 2 or n_float == 1:
         #
         for i,j in enumerate(types):
             if j == float:
@@ -270,6 +328,12 @@ def dcf_range(m_den,m_vel,m_disp,pixsize=1.0,rho=False,m_uden=0.0,m_uvel=0.0,m_u
                 if i == 2:
                     m_disp = np.full_like(m_den,m_disp)
                     m_udisp = np.full_like(m_den,m_udisp)
+                if i == 3:
+                    m_flow = np.full_like(m_den,m_flow)
+                    m_uflow = np.full_like(m_den,m_uflow)
+                if i == 4:
+                    m_flow = np.full_like(m_den,m_flow_lap)
+                    m_uflow = np.full_like(m_den,m_uflow_lap)
             else:
                 continue
     
@@ -277,7 +341,8 @@ def dcf_range(m_den,m_vel,m_disp,pixsize=1.0,rho=False,m_uden=0.0,m_uvel=0.0,m_u
         print('All varibales are arrays. Please use dcf_map instead.')
     
     # Calculating the Bpos array
-    res_map = map_comb(m_den,m_vel,m_disp,pixsize,rho=rho,m_uden=m_uden,m_uvel=m_uvel,m_udisp=m_udisp,m_cdepth=m_cdepth,m_ucdepth=m_ucdepth)
+    res_map = map_comb(m_den,m_vel,m_disp,m_flow=m_flow,m_flow_lap=m_flow_lap,dcftype=dcftype,rho=rho,m_uden=m_uden,m_uvel=m_uvel,
+                       m_udisp=m_udisp,m_cdepth=m_cdepth,m_ucdepth=m_ucdepth,m_uflow=m_uflow,m_uflow_lap=m_uflow_lap)
     Bpos = res_map[0]
     Bpos_u = res_map[1]
     
