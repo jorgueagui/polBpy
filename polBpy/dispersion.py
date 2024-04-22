@@ -8,26 +8,16 @@ Created on Sat Sep 30 14:33:06 2023
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy import signal
-import utils
+from polBpy import utils
 import time
 
-def autocorrelation(polflux,polflux_err,pixsize,pixmask=False,regionmask=False,plots=False,hwhm=False):
+def autocorrelation(polflux,polflux_err,pixsize,mask=False,plots=False,hwhm=False):
     # This function calculates the 1D isotropic autoccorrelation of
     # the polarized flux in the emitting volume
     #
-    if pixmask is not False:
-        #
-        # Create the masked arrays
-        #
-        if regionmask is not False:
-            #
-            mask = pixmask*regionmask
-            polflux = np.ma.masked_array(polflux,mask=mask)
-        else:
-            polflux = np.ma.masked_array(polflux,mask=pixmask)
-
+    polflux *= mask
     # MAKE NaNs INTO ZEROS
-    polflux[~polflux.mask] = np.nan
+    #polflux[~polflux.mask] = np.nan
     polflux[~np.isfinite(polflux)] = 0.0
     
     if plots == True:
@@ -45,11 +35,11 @@ def autocorrelation(polflux,polflux_err,pixsize,pixmask=False,regionmask=False,p
     dvals = pixsize*np.arange(len(autocorr)) # l VALUES
     
     if plots == True:
-    # VISUALIZE THE 1D AUTO-CORRELATION FUNCTION
+        # VISUALIZE THE 1D AUTO-CORRELATION FUNCTION
         plt.figure(1,figsize=(7,7))
         plt.errorbar(dvals/60.,autocorr,yerr=sautocorr,fmt='b.-')
-        plt.xlim([0.,6.0])
-        plt.ylim([0.,1.1])
+        plt.xlim([0.,np.nanmax(dvals/60.)])
+        plt.ylim([0.,1.0])
         plt.xlabel(r' $\ell$ [arcmin]')
         plt.ylabel(r'Norm. Autocorr.')
         plt.axhline(y=0.5,color='r')
