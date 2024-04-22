@@ -11,7 +11,7 @@ from scipy import signal
 from polBpy import utils
 import time
 
-def autocorrelation(polflux,polflux_err,pixsize,mask=False,plots=False,hwhm=False):
+def autocorrelation(polflux,polflux_err,pixsize=1.0,mask=False,plots=False,hwhm=False):
     # This function calculates the 1D isotropic autoccorrelation of
     # the polarized flux in the emitting volume
     #
@@ -36,12 +36,13 @@ def autocorrelation(polflux,polflux_err,pixsize,mask=False,plots=False,hwhm=Fals
     
     if plots == True:
         # VISUALIZE THE 1D AUTO-CORRELATION FUNCTION
-        plt.figure(1,figsize=(7,7))
+        plt.figure(1,figsize=(5,5))
         plt.errorbar(dvals/60.,autocorr,yerr=sautocorr,fmt='b.-')
         plt.xlim([0.,np.nanmax(dvals/60.)])
         plt.ylim([0.,1.0])
         plt.xlabel(r' $\ell$ [arcmin]')
         plt.ylabel(r'Norm. Autocorr.')
+        plt.title('Isotropic Autocorrelation Function')
         plt.axhline(y=0.5,color='r')
 
     if hwhm == True:
