@@ -15,6 +15,7 @@ from scipy.stats import spearmanr
 def chisqr(obs,mod,err):
     
     # Reduced Chi^2 parameter
+    #
     chisqr = 0.0
     for i,j,k in zip(obs,mod,err):
         #
@@ -25,47 +26,53 @@ def chisqr(obs,mod,err):
 #
 def model_funct(x,a,d,f,beam=0.0):
     #
+    beam /= 2.355
     dem = d**2 + 2*beam**2
     term = 1./(1. + (dem/(np.sqrt(2*np.pi)*(d**3)))*f)
     return term*( 1-np.exp(-x/(2*dem)) ) + a*x
 
-def mcmc_fit(disp_funct,lvec,sigma_err,lmin=False,lmax=False,beam=0.0,a2=0.1,delta=0.1,f=1.0,bnds=False,num=500,fixed_delta=False):
-    #
-    class PolynomialModel(Model):
-           
-        parameter_names = ("a", "d", "f")
+class PolynomialModel(Model):
+       
+    parameter_names = ("a", "d", "f", "beam")
 
-        def get_value(self, t):
-            t = t.flatten()
-            dem = self.d**2 + 2*beam**2
-            term = 1./(1.+ (dem/(np.sqrt(2*np.pi)*(self.d**3)))*self.f)
-            return term*( 1-np.exp(-t/(2*dem)) ) + self.a*t 
-    
+    def get_value(self, t):
+        t = t.flatten()
+        dem = self.d**2 + 2*(self.beam/2.355)**2
+        term = 1./(1.+ (dem/(np.sqrt(2*np.pi)*(self.d**3)))*self.f)
+        return term*( 1-np.exp(-t/(2*dem)) ) + self.a*t 
+
+def mcmc_fit(disp_funct,lvec,sigma_err,lmin=False,lmax=False,beam=0.0,a2=0.1,delta=1.0,f=1.0,bnds=False,num=500,fixed_delta=False):
+   
 #-----------------------------------------------------------------------------------------------------------------------
     print('Entering the Fitting function')
     
+    # Trimming the arrays because the first element is NaN
+    disp_funct = disp_funct[1:]
+    lvec = lvec[1:]
+    sigma_err = sigma_err[1:]
     # lmax (in arcsec) defines the range for which the dispersion function is valid
     # I.e., the linear range in l^2 
-    if lmax != False:
-        print("Maximum value of l is neede for fitting.")
-        exit
+    if lmax == False:
+        print("Maximum value of l is needed for fitting.")
+        exit()
     else:
         #Determine the array element closer to lmax
-        m = np.where(np.sqrt(lvec) < lmax)
-        disp_funct = disp_funct[:m[0][0]]
-        sigma_err = sigma_err[:m[0][0]]
-        lvec = lvec[:m[0][0]]
+        m = np.where(lvec < lmax)[0]
+        disp_funct = disp_funct[m]
+        sigma_err = sigma_err[m]
+        lvec = lvec[m]
     
     #If lmin is not False, it set the min value for the range to fit
     if lmin != False:
-        m = np.where(np.sqrt(lvec) > lmin)
-        disp_funct = disp_funct[m[0][0]:]
-        sigma_err = sigma_err[m[0][0]:]
-        lvec = lvec[m[0][0]:]
+        m = np.where(lvec > lmin)[0]
+        disp_funct = disp_funct[m]
+        sigma_err = sigma_err[m]
+        lvec = lvec[m]
     
     #Initializing parameters
-    chi2 = 1.0
-    truth = dict(a=a2,d=delta,f=f)
+    chi2 = 1.
+    sigma_err *= chi2
+    truth = dict(a=a2,d=delta,f=f,beam=beam)
     
     # Guess for parameter fitting
     kwargs = dict(**truth)
@@ -80,6 +87,7 @@ def mcmc_fit(disp_funct,lvec,sigma_err,lmin=False,lmax=False,beam=0.0,a2=0.1,del
     # Evaluate the model with the guess parameters
     mean_model = PolynomialModel(**kwargs)
     model1 = george.GP(mean=mean_model)
+    model1.freeze_parameter('mean:beam')
     
     # You can freeze any parameter but delta is the most common one.
     if fixed_delta == True:
@@ -99,7 +107,8 @@ def mcmc_fit(disp_funct,lvec,sigma_err,lmin=False,lmax=False,beam=0.0,a2=0.1,del
     ndim, nwalkers = len(initial), num
     p0 = initial + 1e-8 * np.random.randn(nwalkers, ndim)
     sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob)
-        
+    
+    print("First run -- Uninflatted errors...")
     #Running burn-in
     p0, _, _ = sampler.run_mcmc(p0, num)
     sampler.reset()
@@ -117,17 +126,17 @@ def mcmc_fit(disp_funct,lvec,sigma_err,lmin=False,lmax=False,beam=0.0,a2=0.1,del
         aa = np.median(samples[:,0])
         dd = delta
         nn = np.median(samples[:,1])
-
+    
     # Evaluate the polynomial model with the best-fit parameters
-    f_function = model_funct(lvec,aa,dd,nn)
+    f_function = model_funct(lvec,aa,dd,nn,beam=beam)
     # Calculate the Chi^2 value for this fit and the dispersion function
     chi2 = chisqr(disp_funct,f_function,sigma_err)
     
     # Use the Chi^2 value to inflate the errors and run the MCM fit once more
-    print('Inflating Errors by =',chi2)
+    print("Second run -- Inflating errors by Chi value = ",np.sqrt(chi2))
     sigma_err *= np.sqrt(chi2)
     
-    truth = dict(a=aa, d=dd, f=nn)
+    truth = dict(a=aa, d=dd, f=nn, beam=beam)
     kwargs = dict(**truth)
         
     if bnds == False:
@@ -138,6 +147,7 @@ def mcmc_fit(disp_funct,lvec,sigma_err,lmin=False,lmax=False,beam=0.0,a2=0.1,del
     # Same steps as in the first MCMC run
     mean_model = PolynomialModel(**kwargs)
     model1 = george.GP(mean=mean_model)
+    model1.freeze_parameter('mean:beam')
     
     if fixed_delta == True:
     		model1.freeze_parameter('mean:d')
@@ -169,12 +179,14 @@ def mcmc_fit(disp_funct,lvec,sigma_err,lmin=False,lmax=False,beam=0.0,a2=0.1,del
         nn = np.median(samples[:,1])
         
     # Calculate quality metrics for fit
-    f_function = model_funct(lvec,aa,dd,nn)
+    f_function = model_funct(lvec,aa,dd,nn,beam=beam)
     chi2 = chisqr(disp_funct,f_function,sigma_err)
     rho = spearmanr(disp_funct,f_function)[0]
     
     # Create structure with final values
     params = dict(a=aa, d=dd, f=nn, chi=np.sqrt(chi2),rho=rho)
+    
+    print("Done with MCMC fitting.")
     #
     return params
 

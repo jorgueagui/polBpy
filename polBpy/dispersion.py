@@ -88,7 +88,7 @@ def structure_function(phi,phierr,x1,x2,pixsize,beam):
         #propagate the error in Dphi
         sig1 = np.deg2rad(np.sqrt(phierr**2 + np.roll(phierr,-i)**2 - 2*phierr*np.roll(phierr,-i)*np.exp(-sep*sep/(4*beam*beam)) ) )
         sig = np.concatenate((sig,sig1[:-i]))
-        utils.update_progress((i)/2/pairs)
+        utils.update_progress((i)/N)
         
     #find max separation
     maxsep = np.nanmax(dist)
@@ -143,7 +143,7 @@ def structure_function(phi,phierr,x1,x2,pixsize,beam):
 
     return (dispsum_c,dvals,errors_c)
 
-def dispersion_function(phi,phierr,pixsize,beam=0.0,mask=False):
+def dispersion_function(phi,phierr,pixsize,beam=0.0,fwhm=True,mask=False):
     #
     #This function calculates the structure function of a set of data according 
     #Hildebrand et al. (2009) Errors are propagated according to standard error
@@ -158,26 +158,32 @@ def dispersion_function(phi,phierr,pixsize,beam=0.0,mask=False):
     if beam == 0.0:
         print("Nonzero value of beam size must be provided")
         exit
-        
+   
+    #Transform the beam FWHM value to sigma value
+    beam /= 2.355
+    
     # Create position arrays in arcsec
     sz = phi.shape
     xpix = sz[0]
     ypix = sz[1]
-    x = np.arange(xpix)
-    y = np.arange(ypix)
-    x1, x2 = pixsize*np.meshgrid(x,y)
+    x = np.arange(xpix,dtype=float)
+    y = np.arange(ypix,dtype=float)
+    x1, x2 = np.meshgrid(x,y)
+    x1 *= pixsize
+    x2 *= pixsize
     
     # Prepare data arrays
-    phi = np.ma.masked_array(phi,mask=mask)
-    phierr = np.ma.masked_array(phierr,mask=mask)
-    x1 = np.ma.masked_array(x1,mask=mask)
-    x2 = np.ma.masked_array(x2,mask=mask)
+    mask[mask == 0.0] = np.nan
+    phi *= mask#np.ma.masked_array(phi,mask=mask)
+    phierr *= mask#np.ma.masked_array(phierr,mask=mask)
+    x1 *= mask#np.ma.masked_array(x1,mask=mask)
+    x2 *= mask#np.ma.masked_array(x2,mask=mask)
     
     #
-    phi = phi[phi.mask == True].ravel()
-    phierr = phierr[phierr.mask == True].ravel()
-    x1 = x1[x1.mask == True].ravel()
-    x2 = x2[x2.mask == True].ravel()
+    phi = phi[np.isfinite(phi)].ravel()
+    phierr = phierr[np.isfinite(phierr)].ravel()
+    x1 = x1[np.isfinite(x1)].ravel()
+    x2 = x2[np.isfinite(x2)].ravel()
     
     disp_c,dvals,errors_c = structure_function(phi,phierr,x1,x2,pixsize,beam)
     
