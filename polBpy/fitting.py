@@ -190,26 +190,54 @@ def mcmc_fit(disp_funct,lvec,sigma_err,lmin=False,lmax=False,beam=0.0,a2=0.1,del
     #
     return params
 
-from joblib import Parallel, delayed
 
-def mcmc_fit_map(disp_func,l,beam=0.0):
-    
-    # DEFINING THE FUNCTION TO FIT THE DISPERSION FUNCTION
-    # HOUDE ET AL 2011.
-    
-    #sz = data['disp_funct_map'].shape
-    #disp_funct_map = np.resize(data['disp_funct_map'],(sz[0]*sz[1],sz[2]))
-    #lvec_map = np.resize(data['lvec_map'],(sz[0]*sz[1],sz[2]))
-    #sigma_err_map = np.resize(data['sigma_err_map'],(sz[0]*sz[1],sz[2]))    
+def mcmc_fit_map(disp_funct_map,lvec_map,sigma_err_map,lmin=False,lmax=False,beam=0.0,Deltap=0.0,a2=0.1,delta=1.0,f=1.0,bnds=False,num=500,fixed_delta=False):
     #
-    #plt.figure(0)
-    #btb0_map = np.empty((sz[1]*sz[0]))
-    #delta_map = np.empty((sz[1]*sz[0]))
-    #a0_map = np.empty((sz[1]*sz[0]))
+    Deltap *= 60.
+    #
+    sz = disp_funct_map.shape
+    disp_funct_map = np.resize(disp_funct_map,(sz[0]*sz[1],sz[2]))
+    lvec_map = np.resize(lvec_map,(sz[0]*sz[1],sz[2]))
+    sigma_err_map = np.resize(sigma_err_map,(sz[0]*sz[1],sz[2]))    
     #
     
-    #import multiprocessing
+    import multiprocessing
+    from joblib import Parallel, delayed
     #pool = mp.Pool(processes=4)
     #samples = 0.0
     #
-    return 1.
+    def mcmc_loop(i):
+        #
+        global res, lvec, disp_funct, sigma_err
+        #
+        print('%s of %s'%(i,sz[0]*sz[1]))
+        disp_funct = disp_funct_map[i,1:]
+        lvec = lvec_map[i,1:]
+        sigma_err = sigma_err_map[i,1:]
+        
+        if not all(disp_funct == 0.):
+            res = mcmc_fit(disp_funct,lvec,sigma_err,lmin=lmin,lmax=lmax,beam=beam,a2=a2,delta=delta,f=f,bnds=False,num=num,fixed_delta=False)
+        else:
+            res = dict(a=np.NaN, d=np.NaN, f=np.NaN,chi=np.NaN,rho=np.NaN)
+        
+        return res
+    
+    inputs = range(sz[0]*sz[1])
+    num_cores = multiprocessing.cpu_count()
+    print('# of cores availables =', num_cores/2)
+    #
+    results = Parallel(n_jobs=num_cores)(delayed(mcmc_loop)(i) for i in inputs)
+    #
+    ratio = [Deltap/(i['f']) for i in results]
+    delta = [i['d'] for i in results]
+    a2 = [i['a'] for i in results]
+    chi = [i['chi'] for i in results]
+    rho = [i['rho'] for i in results]
+    #PUTTING IN IMAGE FORM
+    ratio = np.reshape(ratio,(sz[0],sz[1]))
+    delta = np.reshape(delta,(sz[0],sz[1]))
+    a2 = np.reshape(a2,(sz[0],sz[1]))
+    chi = np.reshape(chi,(sz[0],sz[1]))
+    rho = np.reshape(rho,(sz[0],sz[1]))
+    #
+    return (a2,delta,ratio,chi,rho)

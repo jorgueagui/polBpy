@@ -52,13 +52,14 @@ def autocorrelation(polflux,polflux_err,pixsize=1.0,mask=False,plots=False,hwhm=
     #
     return res
 
-def structure_function(phi,phierr,x1,x2,pixsize,beam):
+def structure_function(phi,phierr,x1,x2,pixsize,beam,verbose=True):
     #
     start = time.time()
     # Loop over the total number of points for the first pair
     N=len(phi)
     pairs=int(N*(N-1)/2)
-    print('Number of vector pairs = ',pairs)
+    if verbose:
+        print('Number of vector pairs = ',pairs)
     #
     Dphi = np.array([])
     dist = np.array([])
@@ -66,7 +67,8 @@ def structure_function(phi,phierr,x1,x2,pixsize,beam):
     cosDphi = np.array([])
     sinDphi = np.array([])
     
-    print("Calculating Pairs:")
+    if verbose:
+        print("Calculating Pairs:")
     for i in range(1,N-1):
         #calculate angle difference
         diff = phi - np.roll(phi,-i)
@@ -88,11 +90,13 @@ def structure_function(phi,phierr,x1,x2,pixsize,beam):
         #propagate the error in Dphi
         sig1 = np.deg2rad(np.sqrt(phierr**2 + np.roll(phierr,-i)**2 - 2*phierr*np.roll(phierr,-i)*np.exp(-sep*sep/(4*beam*beam)) ) )
         sig = np.concatenate((sig,sig1[:-i]))
-        utils.update_progress((i)/N)
+        if verbose:
+            utils.update_progress((i)/N)
         
     #find max separation
     maxsep = np.nanmax(dist)
-    print("Max sep",maxsep)
+    if verbose:
+        print("Max sep",maxsep)
     Nbins = int(np.ceil(maxsep/pixsize)) #total number of bins.
 
     #Define arrays for final products
@@ -106,7 +110,8 @@ def structure_function(phi,phierr,x1,x2,pixsize,beam):
     errors_c = np.zeros(Nbins)
     
     #Run through bins once and scrape the items necessary
-    print("\n Binning:")
+    if verbose:
+        print("\n Binning:")
     #
     for i in range(0, Nbins):
         #
@@ -136,10 +141,12 @@ def structure_function(phi,phierr,x1,x2,pixsize,beam):
         errors_c[i]= np.sqrt( (sinDphisum[i]**2)*sigma2sum[i] + (sinDphisum[i]**2)*Dphisum[i] + \
                              0.75*(cosDphisum[i]**2)*((sigma2sum[i] + Dphisum[i])**2) - \
                                  (sinDphisum[i]**2)*((sigma2sum[i] + Dphisum[i])**2) )/np.sqrt(len(mm[0])) 
-        utils.update_progress(i/Nbins)
+        if verbose:
+            utils.update_progress(i/Nbins)
     #
     end = time.time()
-    print("Elapsed = ", end - start)
+    if verbose:
+        print("Elapsed = ", end - start)
 
     return (dispsum_c,dvals,errors_c)
 
@@ -195,7 +202,7 @@ def dispersion_function(phi,phierr,pixsize,beam=0.0,fwhm=True,mask=False):
     return (lvec,disp_funct,disp_funct_err)
 
 #
-def dispersion_function_map(phi,phierr,pixsize,beam=0.,w=0,mask=False):
+def dispersion_function_map(phi,phierr,pixsize,beam=0.,w=0,mask=False,verbose=True):
     #
     #This function calculates the structure function of a set of data according 
     #Hildebrand et al. (2009) Errors are propagated according to standard error
@@ -210,27 +217,33 @@ def dispersion_function_map(phi,phierr,pixsize,beam=0.,w=0,mask=False):
     if beam == 0.0:
         print("Nonzero value of beam size must be provided")
         exit
+    
+    #Transform the beam FWHM value to sigma value
+    beam /= 2.355
         
     # Create position arrays in arcsec
     sz = phi.shape
     xpix = sz[0]
     ypix = sz[1]
-    x = np.arange(xpix)
-    y = np.arange(ypix)
-    x1, x2 = pixsize*np.meshgrid(x,y)
+    x = np.arange(xpix,dtype=float)
+    y = np.arange(ypix,dtype=float)
+    x1, x2 = np.meshgrid(x,y,indexing='ij')
+    x1 *= pixsize
+    x2 *= pixsize
     
     # Prepare data arrays
-    phi = np.ma.masked_array(phi,mask=mask)
-    phierr = np.ma.masked_array(phierr,mask=mask)
-    x1 = np.ma.masked_array(x1,mask=mask)
-    x2 = np.ma.masked_array(x2,mask=mask)
+    mask[mask == 0.0] = np.nan
+    phi *= mask#np.ma.masked_array(phi,mask=mask)
+    phierr *= mask#np.ma.masked_array(phierr,mask=mask)
+    x1 *= mask#np.ma.masked_array(x1,mask=mask)
+    x2 *= mask#np.ma.masked_array(x2,mask=mask)
     
     # w value is the radius, wsize is the diameter
     wsize = 2*w+1
     print('Analysis window size = ', wsize,'x',wsize)
-    disp_funct_map = np.zeros((ypix,xpix,2*w+1))
-    lvec_map = np.zeros((ypix,xpix,2*w+1))
-    sigma_err_map = np.zeros((ypix,xpix,2*w+1))
+    disp_funct_map = np.zeros((xpix,ypix,2*w+1))
+    lvec_map = np.zeros((xpix,ypix,2*w+1))
+    sigma_err_map = np.zeros((xpix,ypix,2*w+1))
     
     #
     # CREATE CIRCULAR MASK
@@ -240,52 +253,58 @@ def dispersion_function_map(phi,phierr,pixsize,beam=0.,w=0,mask=False):
     circ = xn*xn + yn*yn <= w*w
     cmask[circ] = 1.0
     
+    npixels = len(np.isfinite(mask).flatten())
     #
     for i in range(w,xpix-w):#w,xpix-w-2,1):#0,xpix-1,2*w+1):
         #
-        #
         for j in range(w,ypix-w):
             #
-            print('Pixels = ', j, i)
-            #
-            ii1 = i - w
-            ii2 = i + (w+1)
-            if ii1 < 0:
-                ii1 = 0
-            if ii2 > xpix:
-                ii2 = xpix
-            # Y
-            jj1 = j - w
-            jj2 = j + (w+1)
-            if jj1 < 0:
-                jj1 = 0
-            if jj2 > ypix:
-                jj2 = ypix
-            #
-            local_x1 = x1[jj1:jj2,ii1:ii2]*cmask
-            local_x2 = x2[jj1:jj2,ii1:ii2]*cmask
-            local_phi = phi[jj1:jj2,ii1:ii2]*cmask
-            local_phierr = phierr[jj1:jj2,ii1:ii2]*cmask
-            
-            # 
-            local_phi = local_phi[local_phi.mask == True].ravel()
-            local_phierr = local_phierr[local_phierr.mask == True].ravel()
-            local_x1 = local_x1[local_x1.mask == True].ravel()
-            local_x2 = local_x2[local_x2.mask == True].ravel()
-            
-            if len(local_phi) > w:
-                # 
-                disp_c,dvals,errors_c = structure_function(phi,phierr,x1,x2,pixsize,beam)
-                #
-                disp_funct = 1.0 - disp_c
-                lvec = dvals**2 #arcsec^2
-                disp_funct_err = errors_c
-                #
-                disp_funct_map[j,i,0:len(disp_funct)] = disp_funct
-                lvec_map[j,i,0:len(disp_funct)] = lvec
-                sigma_err_map[j,i,0:len(disp_funct)] = disp_funct_err
-    
+            if ~np.isfinite(mask[i,j]):
+                print('Skipping Pixel =', i,j)
+                continue
             else:
-                print('Not enough pixel locations to calculate structure function. Increase w value')
+                #
+                print('Calculating Function for Pixel = ', i, j)
+                #
+                ii1 = i - w
+                ii2 = i + (w+1)
+                if ii1 < 0:
+                    ii1 = 0
+                if ii2 > xpix:
+                    ii2 = xpix
+                # Y
+                jj1 = j - w
+                jj2 = j + (w+1)
+                if jj1 < 0:
+                    jj1 = 0
+                if jj2 > ypix:
+                    jj2 = ypix
+                #
+                local_x1 = x1[ii1:ii2,jj1:jj2]*cmask
+                local_x2 = x2[ii1:ii2,jj1:jj2]*cmask
+                local_phi = phi[ii1:ii2,jj1:jj2]*cmask
+                local_phierr = phierr[ii1:ii2,jj1:jj2]*cmask
+                
+                #
+                local_phi = local_phi[np.isfinite(local_phi)].ravel()
+                local_phierr = local_phierr[np.isfinite(local_phierr)].ravel()
+                local_x1 = local_x1[np.isfinite(local_x1)].ravel()
+                local_x2 = local_x2[np.isfinite(local_x2)].ravel()
+                
+                if len(local_phi) > w:
+                    # 
+                    disp_c,dvals,errors_c = structure_function(local_phi,local_phierr,local_x1,local_x2,pixsize,beam,verbose=verbose)
+                    #
+                    disp_funct = 1.0 - disp_c
+                    lvec = dvals**2 #arcsec^2
+                    disp_funct_err = errors_c
+                    #
+                    disp_funct_map[i,j,0:len(disp_funct)] = disp_funct
+                    lvec_map[i,j,0:len(disp_funct)] = lvec
+                    sigma_err_map[i,j,0:len(disp_funct)] = disp_funct_err
+                    utils.update_progress(i*j/npixels)
+        
+                else:
+                    print('Not enough pixel locations to calculate structure function. Increase w value')
     
     return (lvec_map,disp_funct_map,sigma_err_map)
