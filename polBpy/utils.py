@@ -10,6 +10,7 @@ import numpy as np
 from astropy.convolution import convolve, convolve_fft
 from astropy.convolution import Gaussian2DKernel
 from scipy import ndimage
+from astropy.stats import sigma_clip
 
 # Some functions
 
@@ -37,7 +38,7 @@ def GetPSD1D(psd2D):
 
     # create an array of integer radial distances from the center
     Y, X = np.ogrid[0:h, 0:w]
-    r    = np.hypot(X - wc, Y - hc).astype(np.int)
+    r    = np.hypot(X - wc, Y - hc).astype("int")
 
     # SUM all psd2D pixels with label 'r' for 0<=r<=wc
     # NOTE: this will miss power contributions in 'corners' r>wc
@@ -98,5 +99,37 @@ def rms_var(vec):
     rms = (2.*np.std(vec)**4)/(len(vec)-1)
     return np.sqrt(rms)
     
-    
+
+def interp(array):
+    m = np.where(array.mask == True)
+    array.data[m] = np.nan
+    bad_indexes = np.isnan(array.data)
+    good_indexes = np.logical_not(bad_indexes)
+    good_data = array.data[good_indexes]
+    #print bad_indexes.nonzero()[0]
+    interpolated = np.interp(bad_indexes.nonzero()[0], good_indexes.nonzero()[0], good_data)
+    array.data[bad_indexes] = interpolated
+    return array.data
+
+def clean_map(array,sigma=3,w=3):
+    #
+    sz = array.shape
+    c_array = array.copy()
+    #
+    for i in range(w,sz[0]-w):
+        for j in range(w,sz[1]-w):
+            #
+            if array[i,j] != np.nan:
+                data_temp = sigma_clip(array[i-w:i+w,j-w:j+w],sigma=sigma)
+                #
+                try:
+                    tmp = interp(data_temp)
+                    #
+                    c_array[i,j] = tmp[w,w]
+                    #
+                except:
+                    continue
+    #
+    return c_array
+
     

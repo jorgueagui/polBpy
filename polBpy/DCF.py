@@ -19,7 +19,7 @@ mH = 1.6737236E-24 # mass of H molecule [g]
 kB = 1.0
 #
 
-def dcf_classical(den,vel,disp,rho=False,eta=1.0,uden=0.,uvel=0.,udisp=0,cdepth=0.,ucdepth=0.0):
+def dcf_classical(den,vel,disp,rho=False,cf=1.0,uden=0.,uvel=0.,udisp=0,cdepth=0.,ucdepth=0.0):
     #
     # Create uncertainties objects for calculations
     den = ufloat(den,uden)
@@ -43,7 +43,7 @@ def dcf_classical(den,vel,disp,rho=False,eta=1.0,uden=0.,uvel=0.,udisp=0,cdepth=
     # Calculating DCf value
     dcf_val_ = (4*np.pi*rho)**0.5
     dcf_val_ *= (vel/disp)
-    dcf_val_ *= eta # 
+    dcf_val_ *= cf # 
     dcf_val_ *= 1.0E+6 # B-strength in micro Gauss
     #
     dcf_val = (dcf_val_.nominal_value,dcf_val_.std_dev)
@@ -83,7 +83,7 @@ def dcf_compressional(den,vel,disp,rho=False,uden=0.,uvel=0.,udisp=0,cdepth=0.,u
     #
     return dcf_val
 
-def dcf_ls_flow(den,vel,disp,flow,rho=False,eta=1.0,uden=0.,uvel=0.,udisp=0,cdepth=0.,ucdepth=0.0,uflow=0.0):
+def dcf_ls_flow(den,vel,disp,flow,rho=False,cf=1.0,uden=0.,uvel=0.,udisp=0,cdepth=0.,ucdepth=0.0,uflow=0.0):
     # This function calculates the POS B-field strength according to the modified
     # large-scale flow approximation by Lopez-Rodriguez et. al. (2021). This expressions requires values of the large-scale
     # flow and its laplacian (evaluated over the same scale as depth), besides the typical values 
@@ -118,7 +118,7 @@ def dcf_ls_flow(den,vel,disp,flow,rho=False,eta=1.0,uden=0.,uvel=0.,udisp=0,cdep
     # Calculating DCF value
     dcf_val_ = (4*np.pi*rho)**0.5
     dcf_val_ *= (vel/disp)
-    dcf_val_ *= eta # 
+    dcf_val_ *= cf # 
     dcf_val_ *= ((1.-disp*(flow/vel))**2)**0.5
     dcf_val_ *= 1.0E+6 # B-strength in micro Gauss
     #
@@ -140,7 +140,7 @@ def dcf_shear_flow(den,vel,disp,flow,flow_lap,rho=False,uden=0.,uvel=0.,udisp=0,
     flow = ufloat(flow,uflow)
     flow_lap = ufloat(flow_lap,uflow_lap)
     #
-    # If rho = True, den is interpretyed as mass density
+    # If rho = True, den is interpreted as mass density
     if rho == True:
         rho = 1.0*den
     else:
@@ -166,7 +166,7 @@ def dcf_shear_flow(den,vel,disp,flow,flow_lap,rho=False,uden=0.,uvel=0.,udisp=0,
     #
     return dcf_val
 
-def map_comb(m_den,m_vel,m_disp,m_flow=0.0,m_flow_lap=0.0,eta=1.0,rho=False,dcftype='class',
+def map_comb(m_den,m_vel,m_disp,m_flow=0.0,m_flow_lap=0.0,cf=1.0,rho=False,dcftype='class',
              m_uden=0.0,m_uvel=0.0,m_udisp=0.0,m_cdepth=0.0,m_ucdepth=0.0,m_uflow=0.0,m_uflow_lap=0.0):
     #
     # This routine calculates Bpos accordding to a DCF approximation
@@ -214,7 +214,7 @@ def map_comb(m_den,m_vel,m_disp,m_flow=0.0,m_flow_lap=0.0,eta=1.0,rho=False,dcft
         # Calculating DCF value
         dcf_map_ = (4*np.pi*m_rho)**0.5
         dcf_map_ *= (m_vel/m_disp)
-        dcf_map_ *= eta
+        dcf_map_ *= cf
         dcf_map_ *= 1.0E+6 # B-strength in micro Gauss
         #
         dcf_map = (unumpy.nominal_values(dcf_map_), unumpy.std_devs(dcf_map_))
@@ -236,7 +236,7 @@ def map_comb(m_den,m_vel,m_disp,m_flow=0.0,m_flow_lap=0.0,eta=1.0,rho=False,dcft
         # Calculating DCF value
         dcf_map_ = (4*np.pi*m_rho)**0.5
         dcf_map_ *= (m_vel/m_disp)
-        dcf_map_ *= eta # 
+        dcf_map_ *= cf # 
         dcf_map_ *= ((1.-m_disp*(m_flow/m_vel))**2)**0.5
         dcf_map_ *= 1.0E+6 # B-strength in micro Gauss
         #
@@ -298,7 +298,7 @@ def dcf_map(m_den,m_vel,m_disp,pixsize,rho=False,m_uden=0.0,m_uvel=0.0,m_udisp=0
         
     return res_map
 
-def dcf_range(m_den,m_vel,m_disp,m_flow=False,m_flow_lap=False,eta=1.0,rho=False,dcftype='class',
+def dcf_range(m_den,m_vel,m_disp,m_flow=False,m_flow_lap=False,cf=1.0,rho=False,dcftype='class',
              m_uden=0.0,m_uvel=0.0,m_udisp=0.0,m_cdepth=0.0,m_ucdepth=0.0,m_uflow=0.0,m_uflow_lap=0.0):
     #
     # This function calculates Bpos values according to a DCF approximation, when some of the variables are maps

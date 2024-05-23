@@ -52,13 +52,13 @@ def autocorrelation(polflux,polflux_err,pixsize=1.0,mask=False,plots=False,hwhm=
     #
     return res
 
-def structure_function(phi,phierr,x1,x2,pixsize,beam,verbose=True):
+def structure_function(phi,phierr,x1,x2,pixsize,beam,verb=True):
     #
     start = time.time()
     # Loop over the total number of points for the first pair
     N=len(phi)
     pairs=int(N*(N-1)/2)
-    if verbose:
+    if verb:
         print('Number of vector pairs = ',pairs)
     #
     Dphi = np.array([])
@@ -67,7 +67,7 @@ def structure_function(phi,phierr,x1,x2,pixsize,beam,verbose=True):
     cosDphi = np.array([])
     sinDphi = np.array([])
     
-    if verbose:
+    if verb:
         print("Calculating Pairs:")
     for i in range(1,N-1):
         #calculate angle difference
@@ -90,12 +90,12 @@ def structure_function(phi,phierr,x1,x2,pixsize,beam,verbose=True):
         #propagate the error in Dphi
         sig1 = np.deg2rad(np.sqrt(phierr**2 + np.roll(phierr,-i)**2 - 2*phierr*np.roll(phierr,-i)*np.exp(-sep*sep/(4*beam*beam)) ) )
         sig = np.concatenate((sig,sig1[:-i]))
-        if verbose:
+        if verb:
             utils.update_progress((i)/N)
         
     #find max separation
     maxsep = np.nanmax(dist)
-    if verbose:
+    if verb:
         print("Max sep",maxsep)
     Nbins = int(np.ceil(maxsep/pixsize)) #total number of bins.
 
@@ -110,7 +110,7 @@ def structure_function(phi,phierr,x1,x2,pixsize,beam,verbose=True):
     errors_c = np.zeros(Nbins)
     
     #Run through bins once and scrape the items necessary
-    if verbose:
+    if verb:
         print("\n Binning:")
     #
     for i in range(0, Nbins):
@@ -141,11 +141,11 @@ def structure_function(phi,phierr,x1,x2,pixsize,beam,verbose=True):
         errors_c[i]= np.sqrt( (sinDphisum[i]**2)*sigma2sum[i] + (sinDphisum[i]**2)*Dphisum[i] + \
                              0.75*(cosDphisum[i]**2)*((sigma2sum[i] + Dphisum[i])**2) - \
                                  (sinDphisum[i]**2)*((sigma2sum[i] + Dphisum[i])**2) )/np.sqrt(len(mm[0])) 
-        if verbose:
+        if verb:
             utils.update_progress(i/Nbins)
     #
     end = time.time()
-    if verbose:
+    if verb:
         print("Elapsed = ", end - start)
 
     return (dispsum_c,dvals,errors_c)
@@ -175,7 +175,7 @@ def dispersion_function(phi,phierr,pixsize,beam=0.0,fwhm=True,mask=False):
     ypix = sz[1]
     x = np.arange(xpix,dtype=float)
     y = np.arange(ypix,dtype=float)
-    x1, x2 = np.meshgrid(x,y)
+    x1, x2 = np.meshgrid(x,y,indexing='ij')
     x1 *= pixsize
     x2 *= pixsize
     
@@ -202,7 +202,7 @@ def dispersion_function(phi,phierr,pixsize,beam=0.0,fwhm=True,mask=False):
     return (lvec,disp_funct,disp_funct_err)
 
 #
-def dispersion_function_map(phi,phierr,pixsize,beam=0.,w=0,mask=False,verbose=True):
+def dispersion_function_map(phi,phierr,pixsize,beam=0.,w=0,mask=False,verb=True):
     #
     #This function calculates the structure function of a set of data according 
     #Hildebrand et al. (2009) Errors are propagated according to standard error
@@ -217,9 +217,9 @@ def dispersion_function_map(phi,phierr,pixsize,beam=0.,w=0,mask=False,verbose=Tr
     if beam == 0.0:
         print("Nonzero value of beam size must be provided")
         exit
-    
-    #Transform the beam FWHM value to sigma value
-    beam /= 2.355
+    else:
+        #Transform the beam FWHM value to sigma value
+        beam /= 2.355
         
     # Create position arrays in arcsec
     sz = phi.shape
@@ -253,7 +253,6 @@ def dispersion_function_map(phi,phierr,pixsize,beam=0.,w=0,mask=False,verbose=Tr
     circ = xn*xn + yn*yn <= w*w
     cmask[circ] = 1.0
     
-    npixels = len(np.isfinite(mask).flatten())
     #
     for i in range(w,xpix-w):#w,xpix-w-2,1):#0,xpix-1,2*w+1):
         #
@@ -264,7 +263,8 @@ def dispersion_function_map(phi,phierr,pixsize,beam=0.,w=0,mask=False,verbose=Tr
                 continue
             else:
                 #
-                print('Calculating Function for Pixel = ', i, j)
+                if verb:
+                    print('Calculating Function for Pixel = ', i, j)
                 #
                 ii1 = i - w
                 ii2 = i + (w+1)
@@ -293,7 +293,7 @@ def dispersion_function_map(phi,phierr,pixsize,beam=0.,w=0,mask=False,verbose=Tr
                 
                 if len(local_phi) > w:
                     # 
-                    disp_c,dvals,errors_c = structure_function(local_phi,local_phierr,local_x1,local_x2,pixsize,beam,verbose=verbose)
+                    disp_c,dvals,errors_c = structure_function(local_phi,local_phierr,local_x1,local_x2,pixsize,beam,verb=verb)
                     #
                     disp_funct = 1.0 - disp_c
                     lvec = dvals**2 #arcsec^2
@@ -302,7 +302,7 @@ def dispersion_function_map(phi,phierr,pixsize,beam=0.,w=0,mask=False,verbose=Tr
                     disp_funct_map[i,j,0:len(disp_funct)] = disp_funct
                     lvec_map[i,j,0:len(disp_funct)] = lvec
                     sigma_err_map[i,j,0:len(disp_funct)] = disp_funct_err
-                    utils.update_progress(i*j/npixels)
+                    #utils.update_progress(i*j/npixels)
         
                 else:
                     print('Not enough pixel locations to calculate structure function. Increase w value')
