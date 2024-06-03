@@ -4,18 +4,18 @@ Dispersion Analysis of Dust-Polarimetric Data and Magnetic Field (**B**) strengt
 ## Description
 ***polBpy*** is an open-source library for the analysis of dust polarimetric data (Stokes *I, Q, U* maps; polarization angle $\phi$ and fraction *p*) with the purpose of studying the magneto-turbulent state of the gas and determining the magnitude of the plane-of-sky (POS) component of the magnetic field $B_{POS}$.
 
-The developement of this library was supported by the NASA/SOFIA Archival Research Program (Grant # USRA for Villanova University).
+The development of this library was supported by the NASA/SOFIA Archival Research Program (Grant # USRA for Villanova University).
 
 ## Features
 
-This libraryis divided into two main modules:
+This library is divided into two main modules:
 
-1. The *dispersion* module which contains routines for performing polarization-angle dispersion calculations. Capabilities inlcude:
+1. The *dispersion* module which contains routines for performing polarization-angle dispersion calculations. Capabilities include:
   - Calculating the two-point dispersion (structure) function (Houde+09).
   - Calculating the autocorrelation function (Houde+09).
   - MCMC fitting and parameter determination (Guerra+21).
   - Local dispersion ($\mathcal{S}$; TBI).
-2. The *DCF* module contains fucntions for calculating $B_{POS}$ using multiple David-Chandrasekhar-Fermi (DCF) approximations:
+2. The *DCF* module contains functions for calculating $B_{POS}$ using multiple David-Chandrasekhar-Fermi (DCF) approximations:
  - Classical (Davis52,Chandrasekhar-Fermi53).
  - Compressional (Skadilis+21)
  - Large-scale flow, shear flow (Lopez-Rodriguez+21,Guerra+23) 
@@ -23,7 +23,11 @@ This libraryis divided into two main modules:
 Both the *dispersion* and *DCF* modules have the capabilities for applying the analysis on a pixel-to-pixel basis resulting in maps of variables.
 
 ## Installation
-(TBF)
+
+```
+pip install git+https://github.com/jorgueagui/polBpy.git
+```
+
 ### Required packages
 - Numpy
 - Scipy
@@ -33,10 +37,11 @@ Both the *dispersion* and *DCF* modules have the capabilities for applying the a
 
 ## Tutorials
 A series of Jupyter notebooks can be found [here.](https://github.com/jorgueagui/polBpy/tree/fbe89ea5aa79fb70be8148f458581906c2cc6af3/tutorials) They show examples of basic and advanced usage of this library.
-- Tutotial I: Calculation of single-value $B_{POS}$ using all DCF approximations.
-- Tutorial II: Calculation of range-values and maps of $B_{POS}$ using all DCF approximations.
+- Tutorial I: Calculation of single-value $B_{POS}$ using all DCF approximations.
+- Tutorial II: Calculation of range-values and maps of $B_{\rm POS}$ using all DCF approximations.
 - Tutorial III: Example of dispersion analysis for a single region.
 - Tutorial IV: Example of pixel-to-pixel dispersion analysis.
+- Tutorial V: Map making of $B_{\rm POS}$ using DCF.
 
 ## References
 
@@ -44,7 +49,11 @@ A list of relevant references can be found [here.](https://github.com/jorgueagui
 
 ## Licensing
 
-The use of this library is regulated by the XX lincense. Details of this license can be found [here.](https://github.com/jorgueagui/polBpy/blob/3d172ed7b52df5684b0ec117958172eb6f4c8679/License.md)
+The use of this library is regulated by the MIT license. Details of this license can be found [here.](https://github.com/jorgueagui/polBpy/blob/3d172ed7b52df5684b0ec117958172eb6f4c8679/License.md)
+
+## Citation
+
+If you use this package for a publication, please cite it as: *polBpy: a Python package for the analysis of dust polarimetric observations*, Jordan A. Guerra, David T. Chuss. DOI: XXX/XXXXX. 2024. v1.0.0.
 
 ## Other Links
 

@@ -7,7 +7,7 @@ Created on Sun Sep 17 18:14:38 2023
 """
 
 import numpy as np
-from astropy.convolution import convolve, convolve_fft
+from astropy.convolution import convolve
 from astropy.convolution import Gaussian2DKernel
 from scipy import ndimage
 from astropy.stats import sigma_clip

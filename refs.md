@@ -83,3 +83,11 @@ The Astrophysical Journal, vol. 908, no. 1, 2021.
 ```
 [doi:10.3847/1538-4357/abd6f0](https://doi.org/10.3847/1538-4357/abd6f0)
 
+Butterfield+24
+```
+Butterfield N.O., Guerra J.A., Chuss D.T., Morris M.R., Pare D., Wollack E.J., Costa A.H., 
+"SOFIA/HAWC+ Far-Infrared Polarimetric Large Area CMZ Exploration (FIREPLACE) II: Detection of a Magnetized Dust Ring in the Galactic Center."
+The Astrophysical Journal, In Press, 2024.
+```
+[doi:10.48550/arXiv.2401.01983/abd6f0](https://doi:10.48550/arXiv.2401.01983)
+

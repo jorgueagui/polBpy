@@ -10,14 +10,18 @@ import matplotlib.pyplot as plt
 from scipy import signal
 from polBpy import utils
 import time
+import sys
 
-def autocorrelation(polflux,polflux_err,pixsize=1.0,mask=False,plots=False,hwhm=False):
+def autocorrelation(polflux,polflux_err,pixsize=False,mask=False,plots=False,hwhm=False):
     # This function calculates the 1D isotropic autoccorrelation of
     # the polarized flux in the emitting volume
     #
+    if type(mask) != np.ndarray:
+        mask = 1.0
+        # all pixels considered -- not recommended.
     polflux *= mask
     # MAKE NaNs INTO ZEROS
-    #polflux[~polflux.mask] = np.nan
+    # Autocorrelation function fails if NaNs are in array
     polflux[~np.isfinite(polflux)] = 0.0
     
     if plots == True:
@@ -26,27 +30,35 @@ def autocorrelation(polflux,polflux_err,pixsize=1.0,mask=False,plots=False,hwhm=
         plt.imshow(polflux,origin='lower')
         plt.title('Map of Polarized Flux')
     #
-    # CALCULATE TEH 2D AUTO-CORRELATION 
+    # CALCULATE THE NORMALIZED 2D AUTO-CORRELATION 
     crr = signal.correlate2d(polflux,polflux,mode='full')
     crr = crr/np.nanmax(crr)
 
     # CALCULATE THE 1D AUTO-CORRELATION
     autocorr, sautocorr,r = utils.GetPSD1D(crr)
-    dvals = pixsize*np.arange(len(autocorr)) # l VALUES
+    #
+    if pixsize == False:
+        pixsize = 1.
+        dvals = pixsize*np.arange(len(autocorr)) # l values in pixel #
+        units = '[pixels]'
+        
+    else:
+        dvals = pixsize*np.arange(len(autocorr))/60. # l values in arcmin
+        units = '[arcmin]'
     
     if plots == True:
         # VISUALIZE THE 1D AUTO-CORRELATION FUNCTION
         plt.figure(1,figsize=(5,5))
-        plt.errorbar(dvals/60.,autocorr,yerr=sautocorr,fmt='b.-')
-        plt.xlim([0.,np.nanmax(dvals/60.)])
+        plt.errorbar(dvals,autocorr,yerr=sautocorr,fmt='b.-')
+        plt.xlim([0.,np.nanmax(dvals)])
         plt.ylim([0.,1.0])
-        plt.xlabel(r' $\ell$ [arcmin]')
+        plt.xlabel(r' $\ell$ '+units)
         plt.ylabel(r'Norm. Autocorr.')
         plt.title('Isotropic Autocorrelation Function')
         plt.axhline(y=0.5,color='r')
 
     if hwhm == True:
-        res = utils.HWHM(dvals/60.,autocorr, sautocorr)
+        res = utils.HWHM(dvals,autocorr, sautocorr)
     else:
         res = (autocorr,sautocorr,dvals)
     #
@@ -55,7 +67,7 @@ def autocorrelation(polflux,polflux_err,pixsize=1.0,mask=False,plots=False,hwhm=
 def structure_function(phi,phierr,x1,x2,pixsize,beam,verb=True):
     #
     start = time.time()
-    # Loop over the total number of points for the first pair
+    # Calculate the total number of pairs inside the ROI
     N=len(phi)
     pairs=int(N*(N-1)/2)
     if verb:
@@ -156,18 +168,15 @@ def dispersion_function(phi,phierr,pixsize,beam=0.0,fwhm=True,mask=False):
     #Hildebrand et al. (2009) Errors are propagated according to standard error
     #propagation
     # phi is an array of polarization angles, phierr is the corresponding array of uncertainties
-    #C is a SkyCoord type argument for the location of each vector
-    #C1.separation(C2)
-    #pixsize is the pixelization of the map in arcseconds. This is the fundamental unit of the bin for the SF.
-    #C = wcs.utils.skycoord_to_pixel(C,w2)
-    #ra = pixsize*np.round(np.array(C[0]))
-    #dec = pixsize*np.round(np.array(C[1]))
+    #x1, x2 are location arrays in units of pixel size.
+    #
+    
     if beam == 0.0:
         print("Nonzero value of beam size must be provided")
-        exit
-   
-    #Transform the beam FWHM value to sigma value
-    beam /= 2.355
+        sys.exit()
+    else:
+        #Transform the beam FWHM value to sigma value
+        beam /= 2.355
     
     # Create position arrays in arcsec
     sz = phi.shape
@@ -180,18 +189,20 @@ def dispersion_function(phi,phierr,pixsize,beam=0.0,fwhm=True,mask=False):
     x2 *= pixsize
     
     # Prepare data arrays
+    # Setting pixels for which mask = 0 to NaN exclude them from calculations
     mask[mask == 0.0] = np.nan
-    phi *= mask#np.ma.masked_array(phi,mask=mask)
-    phierr *= mask#np.ma.masked_array(phierr,mask=mask)
-    x1 *= mask#np.ma.masked_array(x1,mask=mask)
-    x2 *= mask#np.ma.masked_array(x2,mask=mask)
+    phi *= mask
+    phierr *= mask
+    x1 *= mask
+    x2 *= mask
     
-    #
+    # Put arrays into 1D
     phi = phi[np.isfinite(phi)].ravel()
     phierr = phierr[np.isfinite(phierr)].ravel()
     x1 = x1[np.isfinite(x1)].ravel()
     x2 = x2[np.isfinite(x2)].ravel()
     
+    # Call the structure function routine
     disp_c,dvals,errors_c = structure_function(phi,phierr,x1,x2,pixsize,beam)
     
     # Outputs 
@@ -204,19 +215,12 @@ def dispersion_function(phi,phierr,pixsize,beam=0.0,fwhm=True,mask=False):
 #
 def dispersion_function_map(phi,phierr,pixsize,beam=0.,w=0,mask=False,verb=True):
     #
-    #This function calculates the structure function of a set of data according 
-    #Hildebrand et al. (2009) Errors are propagated according to standard error
-    #propagation
-    # phi is an array of polarization angles, phierr is the corresponding array of uncertainties
-    #C is a SkyCoord type argument for the location of each vector
-    #C1.separation(C2)
-    #pixsize is the pixelization of the map in arcseconds. This is the fundamental unit of the bin for the SF.
-    #C = wcs.utils.skycoord_to_pixel(C,w2)
-    #ra = pixsize*np.round(np.array(C[0]))
-    #dec = pixsize*np.round(np.array(C[1]))
+    #This function calculates the dispersion function for an entire region using a moving kernel 
+    # approximation. This routine calls dispersion_function for each valid pixel in the input array
+    
     if beam == 0.0:
         print("Nonzero value of beam size must be provided")
-        exit
+        sys.exit()
     else:
         #Transform the beam FWHM value to sigma value
         beam /= 2.355
@@ -254,7 +258,7 @@ def dispersion_function_map(phi,phierr,pixsize,beam=0.,w=0,mask=False,verb=True)
     cmask[circ] = 1.0
     
     #
-    for i in range(w,xpix-w):#w,xpix-w-2,1):#0,xpix-1,2*w+1):
+    for i in range(w,xpix-w):
         #
         for j in range(w,ypix-w):
             #

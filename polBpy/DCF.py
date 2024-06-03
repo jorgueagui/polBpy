@@ -9,14 +9,13 @@ Created on Sun Sep  3 20:19:48 2023
 import numpy as np
 from uncertainties import ufloat, unumpy
 from uncertainties.umath import * 
-import scipy
 from polBpy import utils
 import random
+import sys
 
 #Defining some constants
 mu = 2.8 # H mean molecular weight
 mH = 1.6737236E-24 # mass of H molecule [g]
-kB = 1.0
 #
 
 def dcf_classical(den,vel,disp,rho=False,cf=1.0,uden=0.,uvel=0.,udisp=0,cdepth=0.,ucdepth=0.0):
@@ -37,6 +36,7 @@ def dcf_classical(den,vel,disp,rho=False,cf=1.0,uden=0.,uvel=0.,udisp=0,cdepth=0
             rho = mu*mH*(den/cdepth)
         except ValueError:
             print('Value of cloud depth [cm] is needed')
+            sys.exit()
             
     # Transforming velocity values to [cm/s]
     vel *= 1.0E+5
@@ -71,6 +71,7 @@ def dcf_compressional(den,vel,disp,rho=False,uden=0.,uvel=0.,udisp=0,cdepth=0.,u
             rho = mu*mH*(den/cdepth)
         except ValueError:
             print('Value of cloud depth [cm] is needed')
+            sys.exit()
             
     # Transforming velocity values to [cm/s]
     vel *= 1.0E+5
@@ -92,7 +93,7 @@ def dcf_ls_flow(den,vel,disp,flow,rho=False,cf=1.0,uden=0.,uvel=0.,udisp=0,cdept
     # Check that disp != vel/flow
     if disp == (vel/flow):
         print('This DCF approximation is not valid for disp = vel/flow')
-        exit
+        sys.exit()
     
     # Create uncertainties objects for calculations
     den = ufloat(den,uden)
@@ -100,7 +101,7 @@ def dcf_ls_flow(den,vel,disp,flow,rho=False,cf=1.0,uden=0.,uvel=0.,udisp=0,cdept
     disp = ufloat(disp,udisp)
     flow = ufloat(flow,uflow)
     #
-    # If rho = True, den is interpretyed as mass density
+    # If rho = True, den is interpreted as mass density
     if rho == True:
         rho = 1.0*den
     else:
@@ -111,6 +112,7 @@ def dcf_ls_flow(den,vel,disp,flow,rho=False,cf=1.0,uden=0.,uvel=0.,udisp=0,cdept
             rho = mu*mH*(den/cdepth)
         except ValueError:
             print('Value of cloud depth [cm] is needed')
+            sys.exit()
             
     # Transforming velocity values to [cm/s]
     vel *= 1.0E+5
@@ -151,6 +153,7 @@ def dcf_shear_flow(den,vel,disp,flow,flow_lap,rho=False,uden=0.,uvel=0.,udisp=0,
             rho = mu*mH*(den/cdepth)
         except ValueError:
             print('Value of cloud depth [cm] is needed')
+            sys.exit()
             
     # Transforming velocity values to [cm/s]
     vel *= 1.0E+5
@@ -206,11 +209,12 @@ def map_comb(m_den,m_vel,m_disp,m_flow=0.0,m_flow_lap=0.0,cf=1.0,rho=False,dcfty
                 m_rho = mu*mH*(m_den/m_cdepth)
         except ValueError:
             print('Value(s) of cloud depth [cm] is/are needed')
-    # Transforming velocity values to [cm/s]
+            sys.exit()
+    # Transforming velocity dispersion values to [cm/s]
+    m_vel *= 1.0E+5
     
     if dcftype == 'class':
         #
-        m_vel *= 1.0E+5
         # Calculating DCF value
         dcf_map_ = (4*np.pi*m_rho)**0.5
         dcf_map_ *= (m_vel/m_disp)
@@ -230,8 +234,7 @@ def map_comb(m_den,m_vel,m_disp,m_flow=0.0,m_flow_lap=0.0,cf=1.0,rho=False,dcfty
             m_uflow = np.full(m_den.shape,m_uflow,dtype=float)
             m_flow = unumpy.uarray(m_flow,m_uflow)
         
-        # Transforming velocity values to [cm/s]
-        m_vel *= 1.0E+5
+        # Transforming large-scale flow velocity values to [cm/s]
         m_flow *= 1.0E+5
         # Calculating DCF value
         dcf_map_ = (4*np.pi*m_rho)**0.5
@@ -256,8 +259,7 @@ def map_comb(m_den,m_vel,m_disp,m_flow=0.0,m_flow_lap=0.0,cf=1.0,rho=False,dcfty
             m_flow = unumpy.uarray(m_flow,m_uflow)
             m_flow_lap = unumpy.uarray(m_flow_lap,m_uflow_lap)
         
-        # Transforming velocity values to [cm/s]
-        m_vel *= 1.0E+5
+        # Transforming shear flow velocity values to [cm/s]
         m_flow *= 1.0E+5
         m_flow_lap *= 1.0E+5
         m_disp_f = (1.-(m_flow/m_vel)*m_disp)/( (1. - (m_flow/m_vel)*m_disp)*(m_disp**2) + (m_disp/m_vel)*m_flow_lap )
@@ -301,14 +303,14 @@ def dcf_map(m_den,m_vel,m_disp,pixsize,rho=False,m_uden=0.0,m_uvel=0.0,m_udisp=0
 def dcf_range(m_den,m_vel,m_disp,m_flow=False,m_flow_lap=False,cf=1.0,rho=False,dcftype='class',
              m_uden=0.0,m_uvel=0.0,m_udisp=0.0,m_cdepth=0.0,m_ucdepth=0.0,m_uflow=0.0,m_uflow_lap=0.0):
     #
-    # This function calculates Bpos values according to a DCF approximation, when some of the variables are maps
+    # This function calculates Bpos values according to a given DCF approximation, when some of the variables are maps
     # but not all. In such case, the spatial distribution will not be correct, instead percentiles 5,50 (median), 
     # and 95 of the distribution will be provided.
     
     # Checking which variable is a single value and create arrays with it.
     types = [type(m_den),type(m_vel),type(m_disp),type(m_flow),type(m_flow_lap)]
     var_names = ['Column density','Velocity dispersion','Pol Angle dispersion','Large Scale Flow','Large Scale Flow Laplacian']
-    #print(types)
+    #
     n_float = len(np.where(types == float))
     if n_float == len(types):
         print('Not all variables can be single values. Use dcf_classical or a similar single-value routine.')
@@ -346,7 +348,7 @@ def dcf_range(m_den,m_vel,m_disp,m_flow=False,m_flow_lap=False,cf=1.0,rho=False,
     Bpos = res_map[0]
     Bpos_u = res_map[1]
     
-    #If all elements in Bpos_s are zero, percentiles are reported directly without uncertainties.
+    #If all elements in Bpos_u are zero, percentiles are reported directly without uncertainties.
     if np.all(Bpos_u == 0.) == True:
         #
         Bpos[Bpos == 0.] = np.nan
@@ -354,13 +356,12 @@ def dcf_range(m_den,m_vel,m_disp,m_flow=False,m_flow_lap=False,cf=1.0,rho=False,
         
     else:
         
+        # If uncertainties in Bpos are calculated, we use a bootstrap method to calaculate percentiles
         #number of "dice rolls"
         niter = 1000
         #make some dummy arrays to hold the realization
         Bpos[Bpos == 0.] = np.nan
         Bpos_u[Bpos_u == 0.] = np.nan
-        #n = len(Bpos.flatten())
-        #indexes = np.arange(0,n,1)
         b0p = Bpos.copy()
         b0p = b0p.flatten()
         sb0p = Bpos_u.copy()
