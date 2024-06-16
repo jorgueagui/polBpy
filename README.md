@@ -1,6 +1,8 @@
 # polBpy
 Dispersion Analysis of Dust-Polarimetric Data and Magnetic Field (**B**) strength.
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.11414008.svg)](https://doi.org/10.5281/zenodo.11414008)
+
 ## Description
 ***polBpy*** is an open-source library for the analysis of dust polarimetric data (Stokes *I, Q, U* maps; polarization angle $\phi$ and fraction *p*) with the purpose of studying the magneto-turbulent state of the gas and determining the magnitude of the plane-of-sky (POS) component of the magnetic field $B_{\rm POS}$.
 
