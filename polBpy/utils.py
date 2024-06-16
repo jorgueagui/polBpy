@@ -12,8 +12,11 @@ from astropy.convolution import Gaussian2DKernel
 from scipy import ndimage
 from astropy.stats import sigma_clip
 
-# Some functions
+# Some functions used by the DCF, Dispersion, and Fitting modules
 
+#===================================================================
+# To change the resolution of a map
+#===================================================================
 def sigma_convolve(x,sigma,osigma,pixsize,fwhm=False):
     #
     if fwhm == False:
@@ -23,9 +26,15 @@ def sigma_convolve(x,sigma,osigma,pixsize,fwhm=False):
     #
     sigma = np.sqrt((sigma/fact)**2 - (osigma/fact)**2)
     sigma /= pixsize
-    kernel = Gaussian2DKernel(sigma)#,x_size=41,y_size=41)
+    if sigma > 0.0:
+        kernel = Gaussian2DKernel(sigma)#,x_size=41,y_size=41)
+        res = convolve(x,kernel)
+    elif sigma == 0.0:
+        res = x.copy()
+    else:
+        print('Target resolution must be greater than the original resolution.')
     #
-    return convolve(x,kernel)
+    return res
 
 #===================================================================
 # Get PSD 1D (total radial power spectrum)
@@ -46,9 +55,11 @@ def GetPSD1D(psd2D):
     spds1D = ndimage.standard_deviation(psd2D, r, index=np.arange(0, wc))
 
     return psd1D,spds1D,r
-#===================================================================
 
-# FIND THE WIDTH AT HALF MAX
+#===================================================================
+# Find the HWHM of the autocorrelation function
+#===================================================================
+# 
 def HWHM(X,Y,S):
     half_max = 0.499
     d = np.sign(half_max - Y[0:-1]) - np.sign(half_max - Y[1:])
@@ -66,6 +77,10 @@ def HWHM(X,Y,S):
     shwhm = np.sqrt((one*sy0)**2 + (two*sy1)**2)
     return hwhm, shwhm
 
+
+#===================================================================
+# Calculation's progress
+#===================================================================
 import sys
 
 def update_progress(progress):
@@ -90,7 +105,10 @@ def update_progress(progress):
     text = "\rPercent: [{0}] {1}% {2} \n".format( "#"*block + "-"*(barLength-block), progress*100, status)
     sys.stdout.write(text)
     sys.stdout.flush()
-    
+
+#===================================================================
+# Some basic statistical functions
+#===================================================================    
 def rms_val(vec):
     rms = np.sqrt(np.nanmean(vec**2))
     return rms
@@ -99,7 +117,9 @@ def rms_var(vec):
     rms = (2.*np.std(vec)**4)/(len(vec)-1)
     return np.sqrt(rms)
     
-
+#===================================================================
+# Nearest neighbors interpolation
+#===================================================================
 def interp(array):
     m = np.where(array.mask == True)
     array.data[m] = np.nan
@@ -111,6 +131,9 @@ def interp(array):
     array.data[bad_indexes] = interpolated
     return array.data
 
+#===================================================================
+# Map cleaning function
+#===================================================================
 def clean_map(array,sigma=3,w=3):
     #
     sz = array.shape

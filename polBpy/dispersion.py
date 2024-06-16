@@ -13,12 +13,14 @@ import time
 import sys
 
 def autocorrelation(polflux,polflux_err,pixsize=False,mask=False,plots=False,hwhm=False):
+    
     # This function calculates the 1D isotropic autoccorrelation of
     # the polarized flux in the emitting volume
     #
     if type(mask) != np.ndarray:
         mask = 1.0
         # all pixels considered -- not recommended.
+        
     polflux *= mask
     # MAKE NaNs INTO ZEROS
     # Autocorrelation function fails if NaNs are in array
@@ -67,6 +69,7 @@ def autocorrelation(polflux,polflux_err,pixsize=False,mask=False,plots=False,hwh
 def structure_function(phi,phierr,x1,x2,pixsize,beam,verb=True):
     #
     start = time.time()
+    
     # Calculate the total number of pairs inside the ROI
     N=len(phi)
     pairs=int(N*(N-1)/2)
@@ -82,8 +85,10 @@ def structure_function(phi,phierr,x1,x2,pixsize,beam,verb=True):
     if verb:
         print("Calculating Pairs:")
     for i in range(1,N-1):
+        
         #calculate angle difference
         diff = phi - np.roll(phi,-i)
+        
         #check to see if 0<Dphi<90
         m1 = np.where(np.abs(diff) > 90)
         diff[m1] = 180. -np.abs(diff[m1])
@@ -99,6 +104,7 @@ def structure_function(phi,phierr,x1,x2,pixsize,beam,verb=True):
         x2_2 = np.roll(x2,-i)
         sep = np.sqrt( (x1_1 - x1_2)**2 + (x2_1 - x2_2)**2 )
         dist = np.concatenate((dist,sep[:-i]))
+        
         #propagate the error in Dphi
         sig1 = np.deg2rad(np.sqrt(phierr**2 + np.roll(phierr,-i)**2 - 2*phierr*np.roll(phierr,-i)*np.exp(-sep*sep/(4*beam*beam)) ) )
         sig = np.concatenate((sig,sig1[:-i]))
@@ -168,9 +174,7 @@ def dispersion_function(phi,phierr,pixsize,beam=0.0,fwhm=True,mask=False):
     #Hildebrand et al. (2009) Errors are propagated according to standard error
     #propagation
     # phi is an array of polarization angles, phierr is the corresponding array of uncertainties
-    #x1, x2 are location arrays in units of pixel size.
-    #
-    
+
     if beam == 0.0:
         print("Nonzero value of beam size must be provided")
         sys.exit()
@@ -216,7 +220,7 @@ def dispersion_function(phi,phierr,pixsize,beam=0.0,fwhm=True,mask=False):
 def dispersion_function_map(phi,phierr,pixsize,beam=0.,w=0,mask=False,verb=True):
     #
     #This function calculates the dispersion function for an entire region using a moving kernel 
-    # approximation. This routine calls dispersion_function for each valid pixel in the input array
+    # approximation. This routine calls dispersion_function for each valid pixel in the input array.
     
     if beam == 0.0:
         print("Nonzero value of beam size must be provided")
@@ -237,10 +241,10 @@ def dispersion_function_map(phi,phierr,pixsize,beam=0.,w=0,mask=False,verb=True)
     
     # Prepare data arrays
     mask[mask == 0.0] = np.nan
-    phi *= mask#np.ma.masked_array(phi,mask=mask)
-    phierr *= mask#np.ma.masked_array(phierr,mask=mask)
-    x1 *= mask#np.ma.masked_array(x1,mask=mask)
-    x2 *= mask#np.ma.masked_array(x2,mask=mask)
+    phi *= mask
+    phierr *= mask
+    x1 *= mask
+    x2 *= mask
     
     # w value is the radius, wsize is the diameter
     wsize = 2*w+1
@@ -249,7 +253,6 @@ def dispersion_function_map(phi,phierr,pixsize,beam=0.,w=0,mask=False,verb=True)
     lvec_map = np.zeros((xpix,ypix,2*w+1))
     sigma_err_map = np.zeros((xpix,ypix,2*w+1))
     
-    #
     # CREATE CIRCULAR MASK
     cmask = np.empty((wsize,wsize))
     cmask[:] = np.nan
@@ -257,7 +260,7 @@ def dispersion_function_map(phi,phierr,pixsize,beam=0.,w=0,mask=False,verb=True)
     circ = xn*xn + yn*yn <= w*w
     cmask[circ] = 1.0
     
-    #
+    # Loop over each pixel in the image
     for i in range(w,xpix-w):
         #
         for j in range(w,ypix-w):

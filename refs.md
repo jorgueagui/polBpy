@@ -83,11 +83,19 @@ The Astrophysical Journal, vol. 908, no. 1, 2021.
 ```
 [doi:10.3847/1538-4357/abd6f0](https://doi.org/10.3847/1538-4357/abd6f0)
 
+Tram+23
+```
+Tram L. N., Bonne L., Hu Y., Lopez-Rodriguez E., Guerra J. A., Lesaffre P., Gusdorf A., et al., 
+"SOFIA Observations of 30 Doradus. II. Magnetic Fields and Large-scale Gas Kinematics",
+The Astrophysical Journal, vol. 946, no. 1, 2023.
+```
+[doi:10.3847/1538-4357/acaab0](https://doi.org/10.3847/1538-4357/acaab0)
+
 Butterfield+24
 ```
 Butterfield N.O., Guerra J.A., Chuss D.T., Morris M.R., Pare D., Wollack E.J., Costa A.H., 
 "SOFIA/HAWC+ Far-Infrared Polarimetric Large Area CMZ Exploration (FIREPLACE) II: Detection of a Magnetized Dust Ring in the Galactic Center."
-The Astrophysical Journal, In Press, 2024.
+The Astrophysical Journal, vol. 968, no. 2, 2024.
 ```
-[doi:10.48550/arXiv.2401.01983/abd6f0](https://doi:10.48550/arXiv.2401.01983)
+[doi:10.3847/1538-4357/ad402c](https://doi.org/10.3847/1538-4357/ad402c)
 

@@ -2,9 +2,9 @@
 Dispersion Analysis of Dust-Polarimetric Data and Magnetic Field (**B**) strength.
 
 ## Description
-***polBpy*** is an open-source library for the analysis of dust polarimetric data (Stokes *I, Q, U* maps; polarization angle $\phi$ and fraction *p*) with the purpose of studying the magneto-turbulent state of the gas and determining the magnitude of the plane-of-sky (POS) component of the magnetic field $B_{POS}$.
+***polBpy*** is an open-source library for the analysis of dust polarimetric data (Stokes *I, Q, U* maps; polarization angle $\phi$ and fraction *p*) with the purpose of studying the magneto-turbulent state of the gas and determining the magnitude of the plane-of-sky (POS) component of the magnetic field $B_{\rm POS}$.
 
-The development of this library was supported by the NASA/SOFIA Archival Research Program (Grant # USRA for Villanova University).
+The development of this library was supported by the NASA/SOFIA Archival Research Program (Grant #09_0537, USRA for Villanova University).
 
 ## Features
 
@@ -17,10 +17,10 @@ This library is divided into two main modules:
   - Local dispersion ($\mathcal{S}$; TBI).
 2. The *DCF* module contains functions for calculating $B_{POS}$ using multiple David-Chandrasekhar-Fermi (DCF) approximations:
  - Classical (Davis52,Chandrasekhar-Fermi53).
- - Compressional (Skadilis+21)
+ - Compressional (Skalidis+21)
  - Large-scale flow, shear flow (Lopez-Rodriguez+21,Guerra+23) 
 
-Both the *dispersion* and *DCF* modules have the capabilities for applying the analysis on a pixel-to-pixel basis resulting in maps of variables.
+Both the *dispersion* and *DCF* modules have the capabilities to perform corresponding analysis on a pixel-to-pixel basis resulting in maps of magnetoturbulent quantities and POS magnetic field strength.
 
 ## Installation
 
@@ -34,6 +34,8 @@ pip install git+https://github.com/jorgueagui/polBpy.git
 - Astropy
 - Matplotlib
 - emcee
+- joblib
+- George
 
 ## Tutorials
 A series of Jupyter notebooks can be found [here.](https://github.com/jorgueagui/polBpy/tree/fbe89ea5aa79fb70be8148f458581906c2cc6af3/tutorials) They show examples of basic and advanced usage of this library.
@@ -45,15 +47,15 @@ A series of Jupyter notebooks can be found [here.](https://github.com/jorgueagui
 
 ## References
 
-A list of relevant references can be found [here.](https://github.com/jorgueagui/polBpy/blob/9039d4af5d25c49130bf51be7fe0ce363424edcc/refs.md)
+A list of relevant references can be found [here.](https://github.com/jorgueagui/polBpy/blob/main/refs.md)
 
 ## Licensing
 
-The use of this library is regulated by the MIT license. Details of this license can be found [here.](https://github.com/jorgueagui/polBpy/blob/3d172ed7b52df5684b0ec117958172eb6f4c8679/License.md)
+The use of this library is regulated by the MIT license. Details of this license can be found [here.](https://github.com/jorgueagui/polBpy/blob/main/License.md)
 
 ## Citation
 
-If you use this package for a publication, please cite it as: *polBpy: a Python package for the analysis of dust polarimetric observations*, Jordan A. Guerra, David T. Chuss. DOI: XXX/XXXXX. 2024. v1.0.0.
+If you use this package for a publication, please cite it as: *polBpy: a Python package for the analysis of dust polarimetric observations*, Jordan A. Guerra, David T. Chuss. DOI: 10.5281/zenodo.11414008. 2024. v0.1.0.
 
 ## Other Links
 

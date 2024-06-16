@@ -25,7 +25,7 @@ def dcf_classical(den,vel,disp,rho=False,cf=1.0,uden=0.,uvel=0.,udisp=0,cdepth=0
     vel = ufloat(vel,uvel)
     disp = ufloat(disp,udisp)
     #
-    # If rho = True, den is interpretyed as mass density
+    # If rho = True, den is interpreted as mass density
     if rho == True:
         rho = 1.0*den
     else:
@@ -206,7 +206,7 @@ def map_comb(m_den,m_vel,m_disp,m_flow=0.0,m_flow_lap=0.0,cf=1.0,rho=False,dcfty
                 m_ucdepth = np.full(m_den.shape,m_ucdepth,dtype=float)
                 m_cdepth = unumpy.uarray(m_cdepth,m_ucdepth)
                 #
-                m_rho = mu*mH*(m_den/m_cdepth)
+            m_rho = mu*mH*(m_den/m_cdepth)
         except ValueError:
             print('Value(s) of cloud depth [cm] is/are needed')
             sys.exit()
@@ -222,6 +222,16 @@ def map_comb(m_den,m_vel,m_disp,m_flow=0.0,m_flow_lap=0.0,cf=1.0,rho=False,dcfty
         dcf_map_ *= 1.0E+6 # B-strength in micro Gauss
         #
         dcf_map = (unumpy.nominal_values(dcf_map_), unumpy.std_devs(dcf_map_))
+     
+    if dcftype == 'compressional':
+        #
+        # Calculating DCF value
+        dcf_map_ = (2*np.pi*m_rho)**0.5
+        dcf_map_ *= (m_vel/m_disp**0.5)
+        dcf_map_ *= 1.0E+6 # B-strength in micro Gauss
+        #
+        dcf_map = (unumpy.nominal_values(dcf_map_), unumpy.std_devs(dcf_map_))  
+     
         
     if dcftype == 'ls-flow':
         #
@@ -273,12 +283,15 @@ def map_comb(m_den,m_vel,m_disp,m_flow=0.0,m_flow_lap=0.0,cf=1.0,rho=False,dcfty
     
     return dcf_map
 
-def dcf_map(m_den,m_vel,m_disp,pixsize,rho=False,m_uden=0.0,m_uvel=0.0,m_udisp=0.0,m_cdepth=0.0,m_ucdepth=0.0,res_den=0.0,res_vel=0.0,res_disp=0.0):
+def dcf_map(m_den,m_vel,m_disp,pixsize,m_flow=False,m_flow_lap=False,rho=False,m_uden=0.0,m_uvel=0.0,m_udisp=0.0,m_uflow=0.0,m_uflow_lap=0.0,
+            m_cdepth=0.0,m_ucdepth=0.0,res_den=0.0,res_vel=0.0,res_disp=0.0,res_flow=0.0,res_flow_lap=0.0,dcftype='class'):
     #
     # If all images have the same resolution
     if ( res_den == res_vel and res_vel == res_disp and res_disp == res_den):
         #
-        res_map = map_comb(m_den,m_vel,m_disp,pixsize,rho=rho,m_uden=0.0,m_uvel=0.0,m_udisp=0.0,m_cdepth=0.0,m_ucdepth=0.0)
+        print('All resolutions are the same, combining maps according to the DCF approx.: %s'%dcftype)
+        res_map = map_comb(m_den,m_vel,m_disp,pixsize,rho=rho,m_uden=m_uden,m_uvel=m_uvel,m_udisp=m_udisp,m_cdepth=m_cdepth,m_ucdepth=m_ucdepth,
+                           dcftype=dcftype)
         
     else:
         # If the resolution of the input images (arrays) are not the same
@@ -286,17 +299,51 @@ def dcf_map(m_den,m_vel,m_disp,pixsize,rho=False,m_uden=0.0,m_uvel=0.0,m_udisp=0
         res_ = [res_den,res_vel,res_disp]
         img = [m_den,m_vel,m_disp]
         u_img = [m_uden,m_uvel,m_udisp]
+        max_res = np.nanmax(res_)
+        #
+        if dcftype == 'ls-flow':
+            #
+            res_.append(res_flow)
+            img.append(m_flow)
+            u_img.append(m_uflow)
+            
+        if dcftype == 'shear-flow':
+            #
+            res_.append(res_flow_lap)
+            img.append(m_flow_lap)
+            u_img.append(m_uflow_lap)
+        
+        print('Maps have different resolutions. Applying sigma_convolve. Target resolution: %s'%max_res)
         #
         for i in range(len(res_)):
             #
-            img[i] = utils.sigma_convolve(img[i],np.nanmax(res_),res_[i],pixsize)
+            img[i] = utils.sigma_convolve(img[i],max_res,res_[i],pixsize)
             try:
                 u_img[i] = utils.sigma_convolve(u_img[i],np.nanmax(res_),res_[i],pixsize)
             except:
                 continue
         #
+        m_den = img[0]
+        m_vel = img[1]
+        m_disp = img[2]
+        #
+        m_uden = u_img[0]
+        m_uvel = u_img[1]
+        m_udisp = u_img[2]
+        
+        if dcftype == 'ls-flow':
+            #
+            m_flow = img[3]
+            m_uflow = u_img[3]
+            
+        if dcftype == 'shear-flow':
+            #
+            m_flow_lap = img[4]
+            m_uflow_lap = u_img[4]
+        
         # After smoothing the images, we call the map-combination function
-        res_map = map_comb(m_den,m_vel,m_disp,pixsize,rho=rho,m_uden=0.0,m_uvel=0.0,m_udisp=0.0,m_cdepth=0.0,m_ucdepth=0.0)
+        res_map = map_comb(m_den,m_vel,m_disp,pixsize,rho=rho,m_uden=m_uden,m_uvel=m_uvel,m_udisp=m_udisp,m_cdepth=m_cdepth,
+                           m_ucdepth=m_ucdepth,dcftype=dcftype)
         
     return res_map
 
@@ -304,7 +351,7 @@ def dcf_range(m_den,m_vel,m_disp,m_flow=False,m_flow_lap=False,cf=1.0,rho=False,
              m_uden=0.0,m_uvel=0.0,m_udisp=0.0,m_cdepth=0.0,m_ucdepth=0.0,m_uflow=0.0,m_uflow_lap=0.0):
     #
     # This function calculates Bpos values according to a given DCF approximation, when some of the variables are maps
-    # but not all. In such case, the spatial distribution will not be correct, instead percentiles 5,50 (median), 
+    # but not all. In such case, the spatial distribution will not be correct, instead percentiles 5, 50 (median), 
     # and 95 of the distribution will be provided.
     
     # Checking which variable is a single value and create arrays with it.

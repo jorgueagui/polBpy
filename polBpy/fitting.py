@@ -31,6 +31,7 @@ def model_funct(x,a,d,f,beam=0.0):
     term = 1./(1. + (dem/(np.sqrt(2*np.pi)*(d**3)))*f)
     return term*( 1-np.exp(-x/(2*dem)) ) + a*x
 
+# Class containing the two-scale function for the MCMC solver
 class PolynomialModel(Model):
        
     parameter_names = ("a", "d", "f", "beam")
@@ -41,8 +42,9 @@ class PolynomialModel(Model):
         term = 1./(1.+ (dem/(np.sqrt(2*np.pi)*(self.d**3)))*self.f)
         return term*( 1-np.exp(-t/(2*dem)) ) + self.a*t 
 
+ 
 def mcmc_fit(disp_funct,lvec,sigma_err,lmin=False,lmax=False,beam=0.0,a2=0.1,delta=1.0,f=1.0,bnds=False,num=500,fixed_delta=False,verb=True):
-   
+# MCMC solver for one dispersion function. This function is called iteratively by mcmc_fit_map.
 #-----------------------------------------------------------------------------------------------------------------------
     if verb:
         print('Entering the Fitting function')
@@ -71,7 +73,7 @@ def mcmc_fit(disp_funct,lvec,sigma_err,lmin=False,lmax=False,beam=0.0,a2=0.1,del
         sigma_err = sigma_err[m]
         lvec = lvec[m]
     
-    #Initializing parameters
+    #Initializing fitting function parameters
     truth = dict(a=a2,d=delta,f=f,beam=beam)
     
     # Guess for parameter fitting
@@ -89,7 +91,7 @@ def mcmc_fit(disp_funct,lvec,sigma_err,lmin=False,lmax=False,beam=0.0,a2=0.1,del
     model1 = george.GP(mean=mean_model)
     model1.freeze_parameter('mean:beam')
     
-    # You can freeze any parameter but delta is the most common one.
+    # You can freeze any parameter but delta is the most common one. This is controlled by the keyword fixed_delta
     if fixed_delta == True:
         model1.freeze_parameter('mean:d')
             
@@ -183,7 +185,7 @@ def mcmc_fit(disp_funct,lvec,sigma_err,lmin=False,lmax=False,beam=0.0,a2=0.1,del
         
     # Calculate quality metrics for fit
     f_function = model_funct(lvec,aa,dd,nn,beam=beam)
-    #chi2 = chisqr(disp_funct,f_function,sigma_err)
+    # Evaluate Spearman's rho value, since fitting function is not linear.
     rho = spearmanr(disp_funct,f_function)[0]
     
     # Create structure with final values
@@ -197,7 +199,10 @@ def mcmc_fit(disp_funct,lvec,sigma_err,lmin=False,lmax=False,beam=0.0,a2=0.1,del
 
 def mcmc_fit_map(disp_funct_map,lvec_map,sigma_err_map,wsize,pixsize,lmin=False,lmax=False,beam=0.0,a2=0.1,
                  delta=1.0,f=1.0,bnds=False,num=500,fixed_delta=False,verb=False,n_cores=False):
-    #
+    
+    # This function loops around all pixels in an image for fitting the pixel dispersion function.
+    # The function mcmc_fit is called iteratively, so the process can be parallelized.
+    
     sz = disp_funct_map.shape
     disp_funct_map = np.resize(disp_funct_map,(sz[0]*sz[1],sz[2]))
     lvec_map = np.resize(lvec_map,(sz[0]*sz[1],sz[2]))
@@ -207,20 +212,21 @@ def mcmc_fit_map(disp_funct_map,lvec_map,sigma_err_map,wsize,pixsize,lmin=False,
     import os
     from joblib import Parallel, delayed
     
-    # By default, restrict the bound for delta to twice the size of the kernel (max physical scale included)
+    # By default, restrict the bound for delta to twice the size of the kernel (max physical scale considered)
     if bnds == False:
         bnds = dict(a=(0,np.inf),d=(0., 2.*wsize*pixsize),f=(0, np.inf))
     else:
         bnds = bnds
     #
     def mcmc_loop(i):
-        #
+        # Main loop
         global res, lvec, disp_funct, sigma_err
         #
         disp_funct = disp_funct_map[i,1:-1]
         lvec = lvec_map[i,1:-1]
         sigma_err = sigma_err_map[i,1:-1]
         
+        # Important that the dispersion function is valid
         if not all(disp_funct == 0.):
             res = mcmc_fit(disp_funct,lvec,sigma_err,lmin=lmin,lmax=lmax,beam=beam,a2=a2,delta=delta,f=f,bnds=bnds,num=num,fixed_delta=False,verb=verb)
         else:
@@ -229,16 +235,17 @@ def mcmc_fit_map(disp_funct_map,lvec_map,sigma_err_map,wsize,pixsize,lmin=False,
         return res
     
     inputs = range(sz[0]*sz[1])
-    #
+    
+    # Define the number of cores to use during the parallelization
     if n_cores == False:
         try:
             num_cores = os.cpu_count()
-            num_cores_avail = int(num_cores/2)
+            num_cores_avail = int(num_cores/2) # Default is half the available cores
             
         except:
-            num_cores_avail = 1
+            num_cores_avail = 1 # If there are no multiple cores
     else:
-        num_cores_avail = n_cores
+        num_cores_avail = n_cores # Defined by user
     
     print('Running MCMC fitting in %s cores'%num_cores_avail)   
     #
@@ -249,7 +256,8 @@ def mcmc_fit_map(disp_funct_map,lvec_map,sigma_err_map,wsize,pixsize,lmin=False,
     a2 = [i['a'] for i in results]
     chi = [i['chi'] for i in results]
     rho = [i['rho'] for i in results]
-    #PUTTING IN IMAGE FORM
+    
+    #Putting resulting maps in the original image's shape
     fratio = np.reshape(fratio,(sz[0],sz[1]))
     delta = np.reshape(delta,(sz[0],sz[1]))
     a2 = np.reshape(a2,(sz[0],sz[1]))
