@@ -38,7 +38,7 @@ pip install git+https://github.com/jorgueagui/polBpy.git
 - George
 
 ## Tutorials
-A series of Jupyter notebooks can be found [here.](https://github.com/jorgueagui/polBpy/tree/fbe89ea5aa79fb70be8148f458581906c2cc6af3/tutorials) They show examples of basic and advanced usage of this library.
+A series of Jupyter notebooks can be found [here.](https://github.com/jorgueagui/polBpy/tree/main/tutorials) They show examples of basic and advanced usage of this library.
 - Tutorial I: Calculation of single-value $B_{POS}$ using all DCF approximations.
 - Tutorial II: Calculation of range-values and maps of $B_{\rm POS}$ using all DCF approximations.
 - Tutorial III: Example of dispersion analysis for a single region.
