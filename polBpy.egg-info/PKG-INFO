@@ -1,3 +1,15 @@
+Metadata-Version: 2.1
+Name: polBpy
+Version: 0.1.0
+Summary: Package for performing angular dispersion analysis of polarimetric data        and DCF calculations.
+Home-page: https://github.com/jorgueagui/polBpy
+Author: Jordan Guerra
+Author-email: jordan.guerra@gmail.com
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Description-Content-Type: text/markdown
+
 # polBpy
 Dispersion Analysis of Dust-Polarimetric Data and Magnetic Field (**B**) strength.
 
@@ -27,7 +39,7 @@ Both the *dispersion* and *DCF* modules have the capabilities to perform corresp
 ## Installation
 
 ```
-pip install git+https://github.com/jorgueagui/polBpy.git@v0.1.1
+pip install git+https://github.com/jorgueagui/polBpy.git
 ```
 
 ### Required packages
@@ -57,15 +69,8 @@ The use of this library is regulated by the MIT license. Details of this license
 
 ## Citation
 
-If you use this package for a publication, please cite it as: *polBpy: a Python package for the analysis of dust polarimetric observations*, Jordan A. Guerra, David T. Chuss, Dylan Paré. DOI: 10.5281/zenodo.11414008. 2024. v0.1.0.
+If you use this package for a publication, please cite it as: *polBpy: a Python package for the analysis of dust polarimetric observations*, Jordan A. Guerra, David T. Chuss. DOI: 10.5281/zenodo.11414008. 2024. v0.1.0.
 
 ## Other Links
 
 - SOFIA/HAWC+ Archive at IPAC: [SOFIA/IRSA.](https://irsa.ipac.caltech.edu/applications/sofia/?__action=layout.showDropDown&)
-
-## Version History
-- 0.1.0, June 16, 2024. First version.
-- 0.1.1, June 23, 2024. Minor patches in Tutorial V.
-
-## Issues
-For any issues found with this package, please report to jordan.guerra [at] gmail.com.
