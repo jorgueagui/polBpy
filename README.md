@@ -27,7 +27,7 @@ Both the *dispersion* and *DCF* modules have the capabilities to perform corresp
 ## Installation
 
 ```
-pip install git+https://github.com/jorgueagui/polBpy.git@v0.1.1
+pip install git+https://github.com/jorgueagui/polBpy.git
 ```
 
 ### Required packages
@@ -57,7 +57,7 @@ The use of this library is regulated by the MIT license. Details of this license
 
 ## Citation
 
-If you use this package for a publication, please cite it as: *polBpy: a Python package for the analysis of dust polarimetric observations*, Jordan A. Guerra, David T. Chuss, Dylan Paré. DOI: 10.5281/zenodo.11414008. 2024. v0.1.0.
+If you use this package for a publication, please cite it as: *polBpy: a Python package for the analysis of dust polarimetric observations*, Jordan A. Guerra, David T. Chuss, Dylan Paré. DOI: 10.5281/zenodo.11414008. 2024.
 
 ## Other Links
 
