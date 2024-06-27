@@ -25,18 +25,28 @@ This library is divided into two main modules:
 Both the *dispersion* and *DCF* modules have the capabilities to perform corresponding analysis on a pixel-to-pixel basis resulting in maps of magnetoturbulent quantities and POS magnetic field strength.
 
 ## Installation
+(Always download and install the latest tagged version!)
 
 ```
 pip install git+https://github.com/jorgueagui/polBpy.git
 ```
 
+or
+
+```
+git clone --depth 1 --branch v0.1.1 https://github.com/jorgueagui/polBpy.git
+cd polBpy
+pip install . 
+```
+
 ### Required packages
+(setup.py will install if not present)
 - Numpy
 - Scipy
 - Astropy
 - Matplotlib
-- emcee
-- joblib
+- Emcee
+- Joblib
 - George
 
 ## Tutorials
