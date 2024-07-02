@@ -29,7 +29,8 @@ setuptools.setup(
         'george',
         'scipy',
         'joblib',
-        'astropy'
+        'astropy',
+        'uncertainties'
         ],
     classifiers=[
         "Programming Language :: Python :: 3",
