@@ -1,9 +1,0 @@
-numpy
-matplotlib
-emcee
-george
-scipy
-joblib
-astropy
-uncertainties
-corner
