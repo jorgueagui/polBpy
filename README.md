@@ -34,7 +34,7 @@ pip install git+https://github.com/jorgueagui/polBpy.git
 or
 
 ```
-git clone --depth 1 --branch v0.1.1 https://github.com/jorgueagui/polBpy.git
+git clone --depth 1 --branch v0.1.2 https://github.com/jorgueagui/polBpy.git
 cd polBpy
 pip install . 
 ```
@@ -48,6 +48,8 @@ pip install .
 - Emcee
 - Joblib
 - George
+- Uncertainties
+- Corner
 
 ## Tutorials
 A series of Jupyter notebooks can be found [here.](https://github.com/jorgueagui/polBpy/tree/main/tutorials) They show examples of basic and advanced usage of this library.
@@ -76,6 +78,7 @@ If you use this package for a publication, please cite it as: *polBpy: a Python 
 ## Version History
 - 0.1.0, June 16, 2024. First version.
 - 0.1.1, June 23, 2024. Minor patches in Tutorial V.
+- 0.1.2, October 12, 2024. Add the option to output the MCMC samples to mcmc_fit. Updated Tutorial III.
 
 ## Issues
 For any issues found with this package, please report to jordan.guerra [at] gmail.com.
