@@ -13,7 +13,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="polBpy",
-    version="0.1.1",
+    version="0.1.2",
     author="Jordan Guerra",
     author_email="jordan.guerra@gmail.com",
     description="Package for performing angular dispersion analysis of polarimetric data\
@@ -29,7 +29,9 @@ setuptools.setup(
         'george',
         'scipy',
         'joblib',
-        'astropy'
+        'astropy',
+        'uncertainties',
+        'corner'
         ],
     classifiers=[
         "Programming Language :: Python :: 3",
